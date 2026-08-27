@@ -1,5 +1,14 @@
 #![forbid(unsafe_code)]
 
+//! Core Xmip identifiers, shared types and stable public contracts.
+
+pub mod identity;
+
+pub use identity::{
+    mechanism, Arriving, Assurance, CredentialRef, Departing, Established, IdentityClass,
+    IdentityContext, Layer, Mechanism, Purpose,
+};
+
 use core::fmt;
 
 /// Every Xmip identifier is a **UUIDv7 held as a `u128`**.
