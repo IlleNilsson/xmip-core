@@ -40,7 +40,65 @@ macro_rules! id_type {
                 )
             }
         }
+
+        impl std::str::FromStr for $name {
+            type Err = String;
+
+            fn from_str(text: &str) -> Result<Self, Self::Err> {
+                parse_uuid(text).map(Self)
+            }
+        }
+
+        /// Serialised as the canonical UUID string, never as the `u128`.
+        ///
+        /// TOML integers are 64-bit signed, so half of a `u128` cannot survive
+        /// the trip. JSON has the same problem the moment JavaScript reads it.
+        /// The text form round-trips everywhere and matches what `Display`
+        /// puts in a log line.
+        #[cfg(feature = "serde")]
+        impl serde::Serialize for $name {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                serializer.collect_str(self)
+            }
+        }
+
+        #[cfg(feature = "serde")]
+        impl<'de> serde::Deserialize<'de> for $name {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                let text = String::deserialize(deserializer)?;
+                text.parse().map_err(serde::de::Error::custom)
+            }
+        }
     };
+}
+
+/// Read canonical UUID form back to the value behind it.
+///
+/// Accepts the hyphenated form only. A bare 32-character hex string would also
+/// parse unambiguously, and is refused on purpose: accepting both means two
+/// spellings of one identifier end up in configuration and neither is wrong.
+fn parse_uuid(text: &str) -> Result<u128, String> {
+    let trimmed = text.trim();
+
+    let shaped = trimmed.len() == 36
+        && trimmed.as_bytes()[8] == b'-'
+        && trimmed.as_bytes()[13] == b'-'
+        && trimmed.as_bytes()[18] == b'-'
+        && trimmed.as_bytes()[23] == b'-';
+
+    if !shaped {
+        return Err(format!("'{trimmed}' is not a UUID in 8-4-4-4-12 form"));
+    }
+
+    let hex: String = trimmed.chars().filter(|c| *c != '-').collect();
+
+    u128::from_str_radix(&hex, 16).map_err(|_| format!("'{trimmed}' is not hexadecimal"))
 }
 
 id_type!(StreamId);
@@ -116,6 +174,28 @@ impl IdGenerator for UuidV7Generator {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn an_identifier_round_trips_as_its_canonical_text() {
+        let id = JourneyId::new(0x0198_7cdf_1234_7abc_8def_0123_4567_89ab);
+
+        let json = serde_json::to_string(&id).expect("serialize");
+        let back: JourneyId = serde_json::from_str(&json).expect("deserialize");
+
+        assert_eq!(json, format!("\"{id}\""), "must be the text form, not a number");
+        assert_eq!(back, id);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn a_bare_hex_string_is_refused() {
+        // Unambiguous, and still wrong: two spellings of one identifier would
+        // both end up in configuration and neither would be the error.
+        let result = "01987cdf12347abc8def0123456789ab".parse::<MessageId>();
+
+        assert!(result.is_err(), "got: {result:?}");
+    }
 
     #[test]
     fn identifiers_are_stable_values() {
