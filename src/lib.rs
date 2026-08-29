@@ -2,12 +2,35 @@
 
 //! Core Xmip identifiers, shared types and stable public contracts.
 
-pub mod identity;
+//! The identity vocabulary lives here rather than in `xmip-core-party` because
+//! the three gates need it and none of them may depend on the Party.
+//! `architecture.toml` gives `xmip-core-identify`, `xmip-core-authenticate` and
+//! `xmip-core-authorize` no dependency on `xmip-core-party`, and it is right:
+//! authenticating a credential is not the same as knowing whose it is.
+//!
+//! Three accepted decisions meet in it. ADR-0019 makes the Party the identity
+//! holder in both directions. ADR-0022 classifies every identity by how it is
+//! proven and forbids two identity contexts from sharing a host process.
+//! ADR-0009 keeps roles out of it: a Party is recognised, a role is granted.
+//!
+//! It was one 705-line file called `identity.rs` until 2026-08-29. Six subjects
+//! shared that name, and two other crates had a file called `identity.rs`
+//! holding neither of them — `rust-style.md` section 5.
 
-pub use identity::{
-    mechanism, Arriving, Assurance, CredentialRef, Departing, Established, IdentityClass,
-    IdentityContext, Layer, Mechanism, Purpose,
-};
+mod credential;
+mod direction;
+mod established;
+mod isolation;
+mod purpose;
+
+pub mod mechanism;
+
+pub use credential::CredentialRef;
+pub use direction::{Arriving, Departing};
+pub use established::Established;
+pub use isolation::IdentityContext;
+pub use mechanism::{Assurance, IdentityClass, Layer, Mechanism};
+pub use purpose::Purpose;
 
 use core::fmt;
 
