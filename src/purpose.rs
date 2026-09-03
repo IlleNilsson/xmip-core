@@ -71,4 +71,3 @@ impl fmt::Display for Purpose {
         })
     }
 }
-

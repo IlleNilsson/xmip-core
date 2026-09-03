@@ -88,7 +88,6 @@ impl fmt::Display for IdentityContext {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
