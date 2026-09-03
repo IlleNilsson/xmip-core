@@ -4,7 +4,7 @@
 //! in kind, not only in value: two of the four match something arriving and
 //! need no secret, two produce proof and name where the material is kept.
 
-use std::fmt;
+use core::fmt;
 
 /// What an identity is configured for.
 ///

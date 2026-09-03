@@ -21,7 +21,16 @@ uuid-v7 = ["dep:uuid"]
 serde = ["dep:serde"]
 
 [dependencies]
-serde = { version = "1", optional = true }
+# default-features = false, because serde's default pulls in std and this crate
+# is no_std. "alloc" is what brings back String and Vec support, which is all
+# an identifier needs to serialise. Proven against thumbv7em-none-eabihf, a
+# Cortex-M7 bare-metal target — Meadow's chip family.
+serde = { version = "1", default-features = false, features = ["alloc"], optional = true }
+
+# Stays std-only, and that is correct rather than an omission. UUIDv7 needs a
+# clock and an entropy source, and a microcontroller has neither by default.
+# A device supplies its own IdGenerator, which is why the trait exists and why
+# this feature was optional before any of this.
 uuid = { version = "1", features = ["v7"], optional = true }
 
 [lib]
