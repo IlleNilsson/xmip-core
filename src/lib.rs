@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+#![no_std]
 
 //! Core Xmip identifiers, shared types and stable public contracts.
 
@@ -17,6 +18,22 @@
 //! shared that name, and two other crates had a file called `identity.rs`
 //! holding neither of them — `rust-style.md` section 5.
 
+// no_std, so the foundation can be sliced onto a microcontroller.
+// deployment-model.md puts an IoT device at one end of the deployment range,
+// and a Cortex-M class board has no std to link against. Nothing here needed
+// it: every type is a value, an identifier or a trait, and all I/O lives in
+// the transport and persist modules by design.
+//
+// alloc rather than core alone, because String and Vec are what an identifier
+// and a fact map are made of. A target with no allocator cannot use this
+// crate, and that is a smaller claim than needing an operating system.
+extern crate alloc;
+
+// Tests run on the host, where std exists and thread::sleep is how the
+// UUIDv7 timestamp test advances the clock.
+#[cfg(test)]
+extern crate std;
+
 mod credential;
 mod direction;
 mod established;
@@ -32,6 +49,8 @@ pub use isolation::IdentityContext;
 pub use mechanism::{Assurance, IdentityClass, Layer, Mechanism};
 pub use purpose::Purpose;
 
+use alloc::format;
+use alloc::string::String;
 use core::fmt;
 
 /// Every Xmip identifier is a **UUIDv7 held as a `u128`**.
@@ -73,7 +92,7 @@ macro_rules! id_type {
             }
         }
 
-        impl std::str::FromStr for $name {
+        impl core::str::FromStr for $name {
             type Err = String;
 
             fn from_str(text: &str) -> Result<Self, Self::Err> {
@@ -206,6 +225,7 @@ impl IdGenerator for UuidV7Generator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::string::ToString;
 
     #[cfg(feature = "serde")]
     #[test]

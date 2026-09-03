@@ -3,7 +3,8 @@
 //! A reference, never the secret. ADR-0019 clause 4 makes the Party the
 //! identity holder and explicitly not a credential store.
 
-use std::fmt;
+use alloc::string::String;
+use core::fmt;
 
 /// The material a presented identity is proven with.
 ///

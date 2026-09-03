@@ -12,7 +12,7 @@
 //!
 //! Separate from how an identity was established — see [`crate::established`].
 
-use std::fmt;
+use core::fmt;
 
 /// How a Stream got into Xmip.
 ///

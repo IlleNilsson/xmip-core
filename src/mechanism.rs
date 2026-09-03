@@ -11,7 +11,8 @@
 //! [`Mechanism::declare`], and is never built from configuration. The ones Xmip
 //! implements itself are in [`declared`].
 
-use std::fmt;
+use alloc::string::String;
+use core::fmt;
 
 mod declared;
 pub use declared::*;

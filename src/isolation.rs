@@ -7,8 +7,9 @@
 //! session keys and connection handles, and process isolation is the boundary
 //! the operating system actually enforces.
 
-use std::collections::BTreeMap;
-use std::fmt;
+use alloc::collections::BTreeMap;
+use alloc::string::{String, ToString};
+use core::fmt;
 
 use crate::mechanism::{IdentityClass, Mechanism};
 

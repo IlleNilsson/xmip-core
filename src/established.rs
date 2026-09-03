@@ -4,7 +4,7 @@
 //! identity; a scheduled pickup can only yield an inferred one, because there
 //! was nobody there to pass anything. ADR-0019 clause 8.
 
-use std::fmt;
+use core::fmt;
 
 /// How an identity came to be claimed. The first gate's own answer.
 ///
