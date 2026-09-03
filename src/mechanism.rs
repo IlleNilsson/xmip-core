@@ -163,4 +163,3 @@ impl Mechanism {
         matches!(self.assurance, Assurance::Authenticates)
     }
 }
-

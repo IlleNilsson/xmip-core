@@ -39,4 +39,3 @@ impl fmt::Display for CredentialRef {
         write!(f, "{}:{}", self.store, self.reference)
     }
 }
-

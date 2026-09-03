@@ -73,8 +73,12 @@ macro_rules! id_type {
         pub struct $name(pub u128);
 
         impl $name {
-            pub const fn new(value: u128) -> Self { Self(value) }
-            pub const fn value(self) -> u128 { self.0 }
+            pub const fn new(value: u128) -> Self {
+                Self(value)
+            }
+            pub const fn value(self) -> u128 {
+                self.0
+            }
         }
 
         /// Canonical UUID form, 8-4-4-4-12.
@@ -87,7 +91,11 @@ macro_rules! id_type {
                 write!(
                     f,
                     "{}-{}-{}-{}-{}",
-                    &hex[0..8], &hex[8..12], &hex[12..16], &hex[16..20], &hex[20..32]
+                    &hex[0..8],
+                    &hex[8..12],
+                    &hex[12..16],
+                    &hex[16..20],
+                    &hex[20..32]
                 )
             }
         }
@@ -235,7 +243,11 @@ mod tests {
         let json = serde_json::to_string(&id).expect("serialize");
         let back: JourneyId = serde_json::from_str(&json).expect("deserialize");
 
-        assert_eq!(json, format!("\"{id}\""), "must be the text form, not a number");
+        assert_eq!(
+            json,
+            format!("\"{id}\""),
+            "must be the text form, not a number"
+        );
         assert_eq!(back, id);
     }
 

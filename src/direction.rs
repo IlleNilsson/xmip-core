@@ -88,4 +88,3 @@ impl fmt::Display for Departing {
         })
     }
 }
-
