@@ -67,6 +67,71 @@ use core::fmt;
 ///
 /// `Ord` is derived over the `u128`, which is big-endian by value, so sorting
 /// these sorts chronologically. That is deliberate and not incidental.
+/// Declare a crate's message-carrying error type: the `String` message, the
+/// standard `Display` and `Error` impls, and a `new` constructor. A dozen crates
+/// hand-rolled this identical boilerplate (ADR-0037); this is the one definition.
+/// The `message` field stays public, so a `Name { message }` literal still works.
+#[macro_export]
+macro_rules! declare_error {
+    ($(#[$meta:meta])* $name:ident) => {
+        $(#[$meta])*
+        #[derive(Debug)]
+        pub struct $name {
+            pub message: String,
+        }
+
+        impl $name {
+            #[must_use]
+            pub fn new(message: impl Into<String>) -> Self {
+                Self { message: message.into() }
+            }
+        }
+
+        impl core::fmt::Display for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                f.write_str(&self.message)
+            }
+        }
+
+        impl core::error::Error for $name {}
+    };
+}
+
+/// As [`declare_error!`], plus a `retryable: bool` and `retryable`/`permanent`
+/// constructors — for the send and process errors, which carry whether a failure
+/// is worth retrying (ADR-0037; the resilience distinction of ADR-0026). Both
+/// fields stay public.
+#[macro_export]
+macro_rules! declare_retryable_error {
+    ($(#[$meta:meta])* $name:ident) => {
+        $(#[$meta])*
+        #[derive(Debug)]
+        pub struct $name {
+            pub message: String,
+            pub retryable: bool,
+        }
+
+        impl $name {
+            #[must_use]
+            pub fn retryable(message: impl Into<String>) -> Self {
+                Self { message: message.into(), retryable: true }
+            }
+            #[must_use]
+            pub fn permanent(message: impl Into<String>) -> Self {
+                Self { message: message.into(), retryable: false }
+            }
+        }
+
+        impl core::fmt::Display for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                f.write_str(&self.message)
+            }
+        }
+
+        impl core::error::Error for $name {}
+    };
+}
+
 macro_rules! id_type {
     ($name:ident) => {
         #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
