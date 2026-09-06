@@ -51,6 +51,7 @@ pub use purpose::Purpose;
 
 use alloc::format;
 use alloc::string::String;
+use alloc::vec::Vec;
 use core::fmt;
 
 /// Every Xmip identifier is a **UUIDv7 held as a `u128`**.
@@ -235,6 +236,21 @@ id_type!(AuditId);
 id_type!(NodeId);
 id_type!(ClusterId);
 id_type!(PartyId);
+
+/// One scalar value of a field — the shape a promoted property and a structured
+/// content field both take. Defined once here so `context` and `contract` share
+/// it rather than each redeclaring it (they alias it as `ContextValue` and
+/// `StructuredValue`, their own names for the same primitive). Not `Eq`: the
+/// `Decimal(f64)` variant has no total equality.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ScalarValue {
+    Null,
+    Bool(bool),
+    Integer(i64),
+    Decimal(f64),
+    Text(String),
+    Binary(Vec<u8>),
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Severity {
