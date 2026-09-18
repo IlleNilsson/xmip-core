@@ -231,6 +231,128 @@ pub fn hl7_sending_application() -> Mechanism {
     Mechanism::declare("hl7-sending-application", SharedSecret, Message, Identifies)
 }
 
+// -- Transport: a name read off the connection, and nothing behind it ----
+//
+// ADR-0050 section 3. ADR-0022 has four classes and none of them is "a name
+// with no proof"; [`circumstance`] set the precedent that such a claim is
+// filed as a shared secret and marked as identifying only, and these follow
+// it. Each is the last segment of `xmip-core-identify-<name>`.
+
+/// The peer address. Spoofable on most networks and still the commonest
+/// allow-list there is.
+#[must_use]
+pub fn ip() -> Mechanism {
+    Mechanism::declare("ip", SharedSecret, Transport, Identifies)
+}
+
+/// The peer's link-layer address, where a fieldbus or Ethernet transport
+/// reports one.
+#[must_use]
+pub fn mac() -> Mechanism {
+    Mechanism::declare("mac", SharedSecret, Transport, Identifies)
+}
+
+/// The peer's reverse-resolved name, from the resolver the node is given.
+#[must_use]
+pub fn dns() -> Mechanism {
+    Mechanism::declare("dns", SharedSecret, Transport, Identifies)
+}
+
+/// One named transport header, read as presented.
+#[must_use]
+pub fn header() -> Mechanism {
+    Mechanism::declare("header", SharedSecret, Transport, Identifies)
+}
+
+/// One named cookie.
+#[must_use]
+pub fn cookie() -> Mechanism {
+    Mechanism::declare("cookie", SharedSecret, Transport, Identifies)
+}
+
+/// A username presented without a proof — an FTP `USER`, a SASL name, the
+/// user half of a Basic credential. The proof, where one follows, is
+/// [`password`]'s.
+#[must_use]
+pub fn username() -> Mechanism {
+    Mechanism::declare("username", SharedSecret, Transport, Identifies)
+}
+
+/// The identity the Receive Location's configuration names for whatever
+/// arrives on it. Inferred, never passed.
+#[must_use]
+pub fn endpoint() -> Mechanism {
+    Mechanism::declare("endpoint", SharedSecret, Transport, Identifies)
+}
+
+/// The Party the Location's configuration names. Inferred, never passed.
+#[must_use]
+pub fn party() -> Mechanism {
+    Mechanism::declare("party", SharedSecret, Transport, Identifies)
+}
+
+/// One named property the carrier promoted — an AMQP container id, an MQTT
+/// client id, a Kafka client id.
+#[must_use]
+pub fn transport() -> Mechanism {
+    Mechanism::declare("transport", SharedSecret, Transport, Identifies)
+}
+
+// -- Transport: verified by something the node holds or reaches -----------
+
+/// RFC 7519 as a transport credential — a `Bearer` token with a signature
+/// the node can check. Inside a payload it is [`jws`].
+#[must_use]
+pub fn jwt() -> Mechanism {
+    Mechanism::declare("jwt", Federated, Transport, Authenticates)
+}
+
+/// SAML 2.0, an assertion signed by an identity provider.
+#[must_use]
+pub fn saml() -> Mechanism {
+    Mechanism::declare("saml", Federated, Transport, Authenticates)
+}
+
+/// NTLMv2. A challenge and a response over the stored NT hash.
+#[must_use]
+pub fn ntlm() -> Mechanism {
+    Mechanism::declare("ntlm", SharedSecret, Transport, Authenticates)
+}
+
+/// A username and password proven by a bind at a directory.
+#[must_use]
+pub fn ldap() -> Mechanism {
+    Mechanism::declare("ldap", SharedSecret, Transport, Authenticates)
+}
+
+/// A username and password proven by the host's PAM stack.
+#[must_use]
+pub fn pam() -> Mechanism {
+    Mechanism::declare("pam", SharedSecret, Transport, Authenticates)
+}
+
+/// A credential proven by the host's SSPI.
+#[must_use]
+pub fn windows() -> Mechanism {
+    Mechanism::declare("windows", SharedSecret, Transport, Authenticates)
+}
+
+// -- Message: a name read out of the Message, and nothing behind it -------
+
+/// One named property of the Message's context — an EDI sender id promoted
+/// earlier, a routing key. **Identifies. Does not authenticate.**
+#[must_use]
+pub fn message() -> Mechanism {
+    Mechanism::declare("message", SharedSecret, Message, Identifies)
+}
+
+/// The Party the Contract the first section is bound to names as its sender.
+/// **Identifies. Does not authenticate.**
+#[must_use]
+pub fn contract() -> Mechanism {
+    Mechanism::declare("contract", SharedSecret, Message, Identifies)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::mechanism;
@@ -299,5 +421,89 @@ mod tests {
             mechanism::peer_credentials().class(),
             IdentityClass::HighAssurance
         );
+    }
+    #[test]
+    fn every_identity_technology_of_adr_0050_has_a_declared_mechanism() {
+        // Nineteen identify, eighteen authenticate: the name a technology
+        // reads and the name its sibling verifies are one value, declared here.
+        let names = [
+            "ip",
+            "mac",
+            "dns",
+            "header",
+            "cookie",
+            "username",
+            "api-key",
+            "certificate",
+            "ssh-key",
+            "jwt",
+            "oidc",
+            "saml",
+            "kerberos",
+            "ntlm",
+            "endpoint",
+            "party",
+            "transport",
+            "message",
+            "contract",
+            "password",
+            "basic",
+            "digest",
+            "bearer",
+            "scram",
+            "oauth2",
+            "mutual-tls",
+            "ldap",
+            "pam",
+            "windows",
+        ];
+        let declared = [
+            mechanism::ip(),
+            mechanism::mac(),
+            mechanism::dns(),
+            mechanism::header(),
+            mechanism::cookie(),
+            mechanism::username(),
+            mechanism::api_key(),
+            mechanism::certificate(),
+            mechanism::ssh_key(),
+            mechanism::jwt(),
+            mechanism::oidc(),
+            mechanism::saml(),
+            mechanism::kerberos(),
+            mechanism::ntlm(),
+            mechanism::endpoint(),
+            mechanism::party(),
+            mechanism::transport(),
+            mechanism::message(),
+            mechanism::contract(),
+            mechanism::password(),
+            mechanism::basic(),
+            mechanism::digest(),
+            mechanism::bearer(),
+            mechanism::scram(),
+            mechanism::oauth2(),
+            mechanism::mutual_tls(),
+            mechanism::ldap(),
+            mechanism::pam(),
+            mechanism::windows(),
+        ];
+
+        for (name, declared) in names.iter().zip(declared.iter()) {
+            assert_eq!(declared.name(), *name);
+        }
+    }
+
+    #[test]
+    fn a_name_read_off_the_connection_identifies_and_proves_nothing() {
+        for claim in [
+            mechanism::ip(),
+            mechanism::header(),
+            mechanism::username(),
+            mechanism::endpoint(),
+            mechanism::message(),
+        ] {
+            assert!(!claim.authenticates(), "{} is a name", claim.name());
+        }
     }
 }
