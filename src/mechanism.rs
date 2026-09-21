@@ -116,10 +116,10 @@ pub struct Mechanism {
 impl Mechanism {
     /// Declared by the module that implements the mechanism.
     ///
-    /// Not reachable from TOML, which is the point. A provider adding
-    /// `xmip-acme-authenticate-scim` states its own class, layer and assurance
-    /// because it is the only code that knows them; an operator deploying it
-    /// does not get to disagree.
+    /// Not reachable from TOML, which is the point. A third party adding
+    /// `xmip-<provider>-authenticate-scim` states its own class, layer and
+    /// assurance because it is the only code that knows them; an operator
+    /// deploying it does not get to disagree.
     #[must_use]
     pub fn declare(
         name: impl Into<String>,
