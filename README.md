@@ -3,7 +3,11 @@
 Core Xmip identifiers, shared types and stable public contracts: the
 identifiers every other crate keys by, the `Severity` and `ExecutionPhase`
 every audit record carries, `ExecutionScope`, the `Clock` and `IdGenerator`
-traits, and the identity vocabulary the three gates share. It goes first,
+traits, the identity vocabulary the three gates share, and `settings`: the
+shape in which every technology of every capability declares what a
+Location may set — each setting's name, kind, default or requirement,
+meaning and side — and the one reading of a Location's values through it
+(ADR-0064, amendment 2026-09-26). It goes first,
 because every other repository depends on it (`repository-model.md` section
 10).
 

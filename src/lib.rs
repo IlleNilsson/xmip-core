@@ -41,6 +41,9 @@ mod isolation;
 mod purpose;
 
 pub mod mechanism;
+/// What a technology can be configured with, declared once by the technology
+/// (ADR-0064, amendment 2026-09-26).
+pub mod settings;
 
 pub use credential::CredentialRef;
 pub use direction::{Arriving, Departing};
@@ -233,6 +236,9 @@ id_type!(SectionId);
 id_type!(ArtifactId);
 id_type!(ExecutionId);
 id_type!(AuditId);
+// An Event's identity (runtime-model section 17, ADR-0065): minted where the
+// Event is raised, by the one generator, and carried as the wire event's `id`.
+id_type!(EventId);
 id_type!(NodeId);
 id_type!(ClusterId);
 id_type!(PartyId);
