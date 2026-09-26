@@ -24,8 +24,10 @@ serde = ["dep:serde"]
 # default-features = false, because serde's default pulls in std and this crate
 # is no_std. "alloc" is what brings back String and Vec support, which is all
 # an identifier needs to serialise. Proven against thumbv7em-none-eabihf, a
-# Cortex-M7 bare-metal target — Meadow's chip family.
-serde = { version = "1", default-features = false, features = ["alloc"], optional = true }
+# Cortex-M7 bare-metal target — Meadow's chip family. "derive" is for a
+# technology's settings declaration (settings.rs), which crosses to the
+# language server and the desktop editor as JSON; derive needs no std.
+serde = { version = "1", default-features = false, features = ["alloc", "derive"], optional = true }
 
 # Stays std-only, and that is correct rather than an omission. UUIDv7 needs a
 # clock and an entropy source, and a microcontroller has neither by default.
@@ -39,3 +41,6 @@ path = "src/lib.rs"
 [dev-dependencies]
 # Only to prove an identifier serialises as text rather than as a number.
 serde_json = "1"
+
+[profile.dev.package."*"]
+opt-level = 3
