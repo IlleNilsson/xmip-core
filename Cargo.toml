@@ -13,8 +13,12 @@ description = "Core identifiers, execution facts and shared contracts for Xmip."
 # On by default so an identifier is a UUIDv7 unless someone deliberately opts
 # out. Optional so xmip-core stays dependency-free for anyone who supplies
 # their own IdGenerator.
-default = ["serde", "uuid-v7"]
-uuid-v7 = ["dep:uuid"]
+default = ["serde", "std", "uuid-v7"]
+uuid-v7 = ["std", "dep:uuid"]
+
+# The system clock (clock.rs). Off on a microcontroller, which supplies its
+# own Clock as it supplies its own IdGenerator.
+std = []
 
 # Identifiers appear in every serialised structure in Xmip, so this is on by
 # default. Optional so a consumer who serialises nothing pays for nothing.
