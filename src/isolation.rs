@@ -126,7 +126,8 @@ mod tests {
         // only useful if a context prints as more than a type name.
         assert_eq!(
             kerberos("constrained").to_string(),
-            "kerberos[highAssurance] delegation-scope=constrained principal=xmip/node-a.corp.example realm=CORP.EXAMPLE"
+            "kerberos[highAssurance] delegation-scope=constrained \
+             principal=xmip/node-a.corp.example realm=CORP.EXAMPLE"
         );
     }
 }

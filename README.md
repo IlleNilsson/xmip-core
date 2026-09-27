@@ -1,9 +1,17 @@
 # xmip-core
 
-Core Xmip identifiers, shared types and stable public contracts: the
-identifiers every other crate keys by, the `Severity` and `ExecutionPhase`
-every audit record carries, `ExecutionScope`, the `Clock` and `IdGenerator`
-traits, the identity vocabulary the three gates share, and `settings`: the
+Core Xmip identifiers, shared types and stable public contracts, a file for
+each: the identifiers every other crate keys by, each a UUIDv7 read strictly
+and written without allocating, and the `IdGenerator` that mints them
+(`id.rs`); the `Severity` and `ExecutionPhase` every audit record carries;
+the one retryable failure, `Failure`, and the macros that declare a crate's
+error in one line (`error.rs`, ADR-0037); what time it is, in the estate's
+one unit — nanoseconds since the Unix epoch as an `i128` — from the `Clock`
+trait and its one production reading, `SystemClock` (`clock.rs`, behind the
+default `std` feature; a wire that counts seconds converts at the wire with
+`Clock::unix_seconds`); the identity vocabulary the three gates share, with
+the catalog of the mechanisms Xmip implements (`mechanism/declared.rs`,
+ADR-0050); and `settings`: the
 shape in which every technology of every capability declares what a
 Location may set — each setting's name, kind, default or requirement,
 meaning and side — and the one reading of a Location's values through it
