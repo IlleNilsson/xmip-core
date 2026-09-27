@@ -7,7 +7,10 @@ traits, the identity vocabulary the three gates share, and `settings`: the
 shape in which every technology of every capability declares what a
 Location may set — each setting's name, kind, default or requirement,
 meaning and side — and the one reading of a Location's values through it
-(ADR-0064, amendment 2026-09-26). It goes first,
+(ADR-0064, amendment 2026-09-26). And `ScalarValue`, the one value a
+promoted property and a structured field both are, with its one rendering
+as text, `ScalarValue::text`, which a filter's comparison and a path's write
+both use; each caller decides what a `Null` is. It goes first,
 because every other repository depends on it (`repository-model.md` section
 10).
 
