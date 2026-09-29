@@ -11,7 +11,7 @@ use core::fmt;
 /// Not how it is proven — that is [`Mechanism`] and [`Assurance`] — and not
 /// where it travelled, which is [`Layer`]. This is the question an operator
 /// asks six months later when a Journey is disputed: *why did Xmip think this
-/// was partner-x?*
+/// was party-x?*
 ///
 /// ```text
 /// Passed     the sender presented it        a certificate, a token, a header
@@ -20,7 +20,7 @@ use core::fmt;
 /// ```
 ///
 /// The three are independent of how the Stream arrived. A pushed Stream can
-/// yield a detected identity — a partner posts an X12 interchange over plain
+/// yield a detected identity — a Party posts an X12 interchange over plain
 /// HTTP and the only name anywhere is in the envelope. A scheduled pickup can
 /// only ever yield an inferred one, because there was nobody there to pass
 /// anything.
@@ -33,7 +33,7 @@ use core::fmt;
 pub enum Established {
     /// The sender presented it. Somebody chose to send this value.
     Passed,
-    /// The configuration is the identity. ADR-0019 clause 7: a partner drop
+    /// The configuration is the identity. ADR-0019 clause 7: a Party drop
     /// folder is not an absence of identity, and neither is a schedule.
     ///
     /// Nothing was presented, so nothing can have been forged — and equally,

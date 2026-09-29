@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn anonymous_does_not_share_with_authenticated_work() {
         let open = IdentityContext::new(&mechanism::anonymous());
-        let keyed = IdentityContext::new(&mechanism::api_key()).with("key-id", "partner-x");
+        let keyed = IdentityContext::new(&mechanism::api_key()).with("key-id", "party-x");
 
         assert!(!open.may_share_host_process(&keyed));
     }
