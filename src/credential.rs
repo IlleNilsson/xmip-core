@@ -13,7 +13,7 @@ use core::fmt;
 /// whatever the deployment uses — a certificate store, a key vault, an SSH
 /// agent, a TPM — and Xmip carries the name of it.
 ///
-/// A Party that held the bytes would put every partner secret in every
+/// A Party that held the bytes would put every Party's secret in every
 /// configuration export, every backup and every support bundle.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CredentialRef {

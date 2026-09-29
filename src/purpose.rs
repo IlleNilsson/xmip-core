@@ -14,7 +14,7 @@ use core::fmt;
 /// is kept. ADR-0019 clause 4.
 ///
 /// ```text
-/// Receive    a partner arrives          matcher
+/// Receive    a Party arrives          matcher
 /// Operate    a person drives Xmip       matcher
 /// Process    Xmip runs as somebody      credential
 /// Send       Xmip is the client         credential
@@ -38,7 +38,7 @@ pub enum Purpose {
     ///
     /// The CLI, the PowerShell module, the MAUI desktop GUI and the Blazor web
     /// GUI all authenticate somebody, and that somebody is a Party like any
-    /// other — a person rather than a trading partner, but recognised the same
+    /// other — a person rather than a Party, but recognised the same
     /// way. ADR-0014.
     ///
     /// Matched, not presented: the operator proves themselves to Xmip, so this

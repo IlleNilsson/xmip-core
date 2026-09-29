@@ -63,14 +63,14 @@ impl fmt::Display for Arriving {
 ///
 /// The distinction is not cosmetic. A pushed departure fails at Xmip and is
 /// Xmip's to retry; a collected one waits, and its failure mode is nobody
-/// turning up. Reporting them as one number makes an unreachable partner and an
+/// turning up. Reporting them as one number makes an unreachable Party and an
 /// idle one look identical on the same dashboard.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Departing {
     /// Xmip connects and sends. HTTP, SFTP, AS2, a queue producer.
     Pushed,
     /// Xmip holds it and something comes and gets it — a solicit-response
-    /// reply, a partner polling an outbox, a client calling an API.
+    /// reply, a Party polling an outbox, a client calling an API.
     ///
     /// Xmip is the server, so it presents no identity: the collector does, and
     /// is put through the same three gates an arrival is.

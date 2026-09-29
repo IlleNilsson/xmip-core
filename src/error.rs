@@ -122,9 +122,9 @@ mod tests {
             Failure::retryable("the peer hung up").to_string(),
             "the peer hung up (retryable)"
         );
-        let met = Failure::permanent("403").at("sending to partner-x");
-        assert_eq!(met.message, "sending to partner-x: 403");
+        let met = Failure::permanent("403").at("sending to party-x");
+        assert_eq!(met.message, "sending to party-x: 403");
         assert!(!met.retryable);
-        assert_eq!(met.to_string(), "sending to partner-x: 403 (not retryable)");
+        assert_eq!(met.to_string(), "sending to party-x: 403 (not retryable)");
     }
 }

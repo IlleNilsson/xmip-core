@@ -118,7 +118,7 @@ pub fn password() -> Mechanism {
 
 /// The path, the permissions and the source address of a drop folder.
 ///
-/// ADR-0019 clause 7: a partner drop folder is not an absence of identity.
+/// ADR-0019 clause 7: a Party drop folder is not an absence of identity.
 /// The circumstance *is* the transport identity, and it is authenticated as
 /// that — weakly, and on the record.
 #[must_use]
