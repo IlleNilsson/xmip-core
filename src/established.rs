@@ -44,12 +44,29 @@ pub enum Established {
     Detected,
 }
 
-impl fmt::Display for Established {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
+impl Established {
+    /// Every way, in the order the gate asks.
+    pub const ALL: [Self; 3] = [Self::Passed, Self::Inferred, Self::Detected];
+
+    /// The word it is written in, here and nowhere else.
+    #[must_use]
+    pub const fn word(self) -> &'static str {
+        match self {
             Self::Passed => "passed",
             Self::Inferred => "inferred",
             Self::Detected => "detected",
-        })
+        }
+    }
+
+    /// The way a word names, exactly: what a record kept of it read back.
+    #[must_use]
+    pub fn named(word: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|way| way.word() == word)
+    }
+}
+
+impl fmt::Display for Established {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.word())
     }
 }
