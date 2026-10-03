@@ -41,7 +41,7 @@
 mod read;
 mod refusal;
 
-pub use read::{Given, Read};
+pub use read::{Given, Read, duration};
 pub use refusal::{Refusal, Refused};
 
 /// One technology's settings: every setting a Location may give it, beyond
