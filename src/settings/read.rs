@@ -241,8 +241,12 @@ fn held(kind: Kind, value: &Given) -> Result<Held, String> {
 }
 
 /// A duration's text, a whole number and its unit: `250ms`, `30s`, `5m`,
-/// `1h`.
-fn duration(text: &str) -> Result<Duration, String> {
+/// `1h`. The one reading of a configured duration: a setting's, and a
+/// Send Port's retry backoff in `xmip-core-configure`.
+///
+/// # Errors
+/// The text in words, when it is not a whole number and one of the units.
+pub fn duration(text: &str) -> Result<Duration, String> {
     let digits = text.trim().bytes().take_while(u8::is_ascii_digit).count();
     let (number, unit) = text.trim().split_at(digits);
     let refused = || alloc::format!("{text:?} is not a number and ms, s, m or h");
