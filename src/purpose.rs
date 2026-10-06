@@ -26,10 +26,10 @@ pub enum Purpose {
     Receive,
     /// What a Process runs as.
     ///
-    /// The consequential one. ADR-0022 clause 3 gives a host process the work
+    /// The consequential one. ADR-0022 clause 3 gives a Host Service the work
     /// of exactly one identity context, so this identity is not only what the
-    /// Process acts as — it decides which host process the Process can be
-    /// placed in, and therefore how many host processes a node runs.
+    /// Process acts as — it decides which Host Service the Process can be
+    /// placed in, and therefore how many Host Services a node runs.
     Process,
     /// Offered when Xmip is the client. ADR-0006 resolves which one, inheriting
     /// up through Send Port and Send Port Group to the Sending Process.
