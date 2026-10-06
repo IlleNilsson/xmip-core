@@ -1,8 +1,8 @@
 //! The full set of facts under which a credential operates, and whether two of
-//! them may share a host process.
+//! them may share a Host Service.
 //!
 //! ADR-0022 is *Identity classes and runtime isolation*; clause 2 defines the
-//! identity context and clause 3 is the rule it exists for. A host process runs
+//! identity context and clause 3 is the rule it exists for. A Host Service runs
 //! the work of one identity context, because a process holds tickets, tokens,
 //! session keys and connection handles, and process isolation is the boundary
 //! the operating system actually enforces.
@@ -62,16 +62,16 @@ impl IdentityContext {
         self.facts.get(name).map(String::as_str)
     }
 
-    /// Whether these two may run in one host process. ADR-0022 clause 3.
+    /// Whether these two may run in one Host Service. ADR-0022 clause 3.
     ///
-    /// A host process runs the work of one identity context, because a process
+    /// A Host Service runs the work of one identity context, because a process
     /// holds tickets, tokens, session keys and connection handles, and process
     /// isolation is the boundary the operating system actually enforces.
     /// Anything finer is a promise made by whatever code happens to be running
     /// — and Xmip loads third-party Modules across a C ABI, so that is not
     /// hypothetical.
     #[must_use]
-    pub fn may_share_host_process(&self, other: &Self) -> bool {
+    pub fn may_share_host_service(&self, other: &Self) -> bool {
         self == other
     }
 }
@@ -105,12 +105,12 @@ mod tests {
         // The mistake ADR-0022 clause 2 exists to prevent. Same realm, same
         // principal, and a ticket that reaches services the other cannot.
         assert_ne!(kerberos("unconstrained"), kerberos("constrained"));
-        assert!(!kerberos("unconstrained").may_share_host_process(&kerberos("constrained")));
+        assert!(!kerberos("unconstrained").may_share_host_service(&kerberos("constrained")));
     }
 
     #[test]
     fn identical_facts_are_one_context() {
-        assert!(kerberos("constrained").may_share_host_process(&kerberos("constrained")));
+        assert!(kerberos("constrained").may_share_host_service(&kerberos("constrained")));
     }
 
     #[test]
@@ -118,7 +118,7 @@ mod tests {
         let open = IdentityContext::new(&mechanism::anonymous());
         let keyed = IdentityContext::new(&mechanism::api_key()).with("key-id", "party-x");
 
-        assert!(!open.may_share_host_process(&keyed));
+        assert!(!open.may_share_host_service(&keyed));
     }
     #[test]
     fn a_context_reads_as_something_an_operator_can_act_on() {
