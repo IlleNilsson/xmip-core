@@ -25,8 +25,8 @@ pub fn kerberos() -> Mechanism {
     Mechanism::declare("kerberos", HighAssurance, Transport, Authenticates)
 }
 
-/// An X.509 certificate outside a TLS handshake — S/MIME in AS2, an Oracle
-/// wallet, an OPC UA application instance certificate.
+/// An X.509 certificate outside a TLS handshake — S/MIME in AS2, an OPC UA
+/// application instance certificate.
 #[must_use]
 pub fn certificate() -> Mechanism {
     Mechanism::declare("certificate", HighAssurance, Transport, Authenticates)
@@ -103,7 +103,7 @@ pub fn api_key() -> Mechanism {
     Mechanism::declare("api-key", SharedSecret, Transport, Authenticates)
 }
 
-/// RFC 5802. Kafka, PostgreSQL, MySQL `caching_sha2_password`.
+/// RFC 5802. Kafka, PostgreSQL.
 #[must_use]
 pub fn scram() -> Mechanism {
     Mechanism::declare("scram", SharedSecret, Transport, Authenticates)
