@@ -297,6 +297,6 @@ mod tests {
     fn a_setting_is_found_by_its_name() {
         assert_eq!(EXAMPLE.setting("group").map(|s| s.kind), Some(Kind::Text));
         assert!(EXAMPLE.setting("nothing").is_none());
-        assert!(Settings::none("x").settings.is_empty());
+        assert_eq!(Settings::none("x").settings, []);
     }
 }
