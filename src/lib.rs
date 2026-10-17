@@ -1,4 +1,3 @@
-#![forbid(unsafe_code)]
 #![no_std]
 
 //! Core Xmip identifiers, shared types and stable public contracts.
@@ -22,16 +21,18 @@
 // deployment-model.md puts an IoT device at one end of the deployment range,
 // and a Cortex-M class board has no std to link against. Every type is a
 // value, an identifier or a trait, and all I/O lives in the transport and
-// persist modules by design; the one reading of the operating system here,
-// the system clock, is behind the `std` feature, as the UUIDv7 generator is.
+// persist modules by design; the two uses of the operating system here, the
+// system clock and the timed wait, are behind the `std` feature, as the
+// UUIDv7 generator is.
 //
 // alloc rather than core alone, because String and Vec are what an identifier
 // and a fact map are made of. A target with no allocator cannot use this
 // crate, and that is a smaller claim than needing an operating system.
 extern crate alloc;
 
-// std with the `std` feature, for the system clock, and in tests, where
-// thread::sleep is how the UUIDv7 timestamp test advances the clock.
+// std with the `std` feature, for the system clock and the timed wait, and
+// in tests, where thread::sleep is how the UUIDv7 timestamp test advances
+// the clock.
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
@@ -51,6 +52,22 @@ pub mod mechanism;
 /// What a technology can be configured with, declared once by the technology
 /// (ADR-0064, amendment 2026-09-26).
 pub mod settings;
+/// A thread waiting under a lock until woken or due, its due time kept to
+/// the microsecond (the owner, 2026-10-16).
+#[cfg(feature = "std")]
+pub mod wake;
+
+/// The one latency spread the estate's tests hold a wait to.
+#[cfg(feature = "test-support")]
+pub mod latency;
+/// The processor time a thread and the process have used, for tests.
+#[cfg(feature = "test-support")]
+pub mod processor_time;
+
+/// The crate's calls to the operating system, behind safe functions: the
+/// one file that may hold unsafe code (ADR-0050, amendment 2026-10-17).
+#[cfg(feature = "std")]
+mod system;
 
 #[cfg(feature = "std")]
 pub use clock::SystemClock;

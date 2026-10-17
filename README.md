@@ -9,7 +9,11 @@ error in one line (`error.rs`, ADR-0037); what time it is, in the estate's
 one unit — nanoseconds since the Unix epoch as an `i128` — from the `Clock`
 trait and its one production reading, `SystemClock` (`clock.rs`, behind the
 default `std` feature; a wire that counts seconds converts at the wire with
-`Clock::unix_seconds`); the identity vocabulary the three gates share, with
+`Clock::unix_seconds`); the one timed wait of the message path, `wake::Wake`,
+a `Condvar`'s shape whose due time is kept to the microsecond — on Windows a
+kernel event and a high-resolution waitable timer per waiting thread, the
+calls in `system.rs`, the crate's one file of unsafe code (behind `std`;
+ADR-0050, amendment 2026-10-17); the identity vocabulary the three gates share, with
 the catalog of the mechanisms Xmip implements (`mechanism/declared.rs`,
 ADR-0050); and `settings`: the
 shape in which every technology of every capability declares what a

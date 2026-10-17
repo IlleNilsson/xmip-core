@@ -16,9 +16,15 @@ description = "Core identifiers, execution facts and shared contracts for Xmip."
 default = ["serde", "std", "uuid-v7"]
 uuid-v7 = ["std", "dep:uuid"]
 
-# The system clock (clock.rs). Off on a microcontroller, which supplies its
-# own Clock as it supplies its own IdGenerator.
-std = []
+# The system clock (clock.rs) and the timed wait (wake.rs). Off on a
+# microcontroller, which supplies its own Clock as it supplies its own
+# IdGenerator.
+std = ["dep:windows-sys"]
+
+# What the estate's tests measure with: the processor time a thread and the
+# process have used (processor_time.rs) and the one latency spread
+# (latency.rs). Never in a node.
+test-support = ["std", "dep:libc"]
 
 # Identifiers appear in every serialised structure in Xmip, so this is on by
 # default. Optional so a consumer who serialises nothing pays for nothing.
@@ -39,8 +45,31 @@ serde = { version = "1", default-features = false, features = ["alloc", "derive"
 # this feature was optional before any of this.
 uuid = { version = "1", features = ["v7"], optional = true }
 
+# The operating system's calls (system.rs): on Windows the timed wait's
+# kernel event and high-resolution waitable timer (the owner, 2026-10-16)
+# and, for tests, the cycle counts. The version the runtime, audit and
+# secret already build, so nothing new is compiled.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", optional = true, features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Threading",
+    "Win32_System_WindowsProgramming",
+] }
+
+# For tests on Unix, the processor time a thread and the process have used:
+# clock_gettime (system.rs). In the lock already.
+[target.'cfg(unix)'.dependencies]
+libc = { version = "0.2", optional = true }
+
 [lib]
 path = "src/lib.rs"
+
+# deny, not forbid: src/system.rs allows unsafe code with its reason at the
+# top (ADR-0050, amendment 2026-10-17), and nothing else may.
+# test/Unsafe.Test.ps1 holds the list.
+[lints.rust]
+unsafe_code = "deny"
 
 [dev-dependencies]
 # Only to prove an identifier serialises as text rather than as a number.
