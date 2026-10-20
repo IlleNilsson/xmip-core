@@ -282,14 +282,14 @@ mod tests {
             meaning: "The port.",
             applies: Applies::Send,
         };
-        let json = serde_json::to_string(&port).expect("serialises");
+        let json = serde_json::to_string(&port).expect("serializes");
         assert_eq!(
             json,
             "{\"name\":\"port\",\"kind\":\"integer\",\"minimum\":1,\"maximum\":65535,\
              \"presence\":\"default\",\"default\":9092,\"meaning\":\"The port.\",\
              \"applies\":\"send\"}"
         );
-        let json = serde_json::to_string(EXAMPLE).expect("serialises");
+        let json = serde_json::to_string(EXAMPLE).expect("serializes");
         assert!(json.contains("\"presence\":\"required\""), "{json}");
     }
 

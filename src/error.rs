@@ -35,7 +35,7 @@ macro_rules! declare_error {
 
 /// Declare a crate's own retryable failure: the shape of [`Failure`] under a
 /// name the crate owns, so the crate can convert its dependencies' errors into
-/// it, and a conversion into [`Failure`] that keeps the judgement. The
+/// it, and a conversion into [`Failure`] that keeps the judgment. The
 /// transport declares `TransportError` with it; nothing else writes the shape.
 ///
 /// Whether a failure is worth retrying is a property **of the failure**, not
@@ -78,7 +78,7 @@ macro_rules! declare_retryable_error {
             /// Retryability is the failure's own property and survives the
             /// wrapping. Writing `format!("{error}")` into a new failure instead
             /// loses it — a timeout becomes permanent, and resilience stops
-            /// retrying what it should retry — and doubles the judgement in the
+            /// retrying what it should retry — and doubles the judgment in the
             /// text, which is how it was found: a Linux run read *(retryable)
             /// (not retryable)* on one line (2026-09-19).
             #[must_use]
@@ -89,12 +89,12 @@ macro_rules! declare_retryable_error {
             }
         }
 
-        /// The message and the judgement: an operator reads this in a log
+        /// The message and the judgment: an operator reads this in a log
         /// without the struct around it.
         impl core::fmt::Display for $name {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                let judgement = if self.retryable { "retryable" } else { "not retryable" };
-                write!(f, "{} ({judgement})", self.message)
+                let judgment = if self.retryable { "retryable" } else { "not retryable" };
+                write!(f, "{} ({judgment})", self.message)
             }
         }
 
@@ -107,7 +107,7 @@ declare_retryable_error!(
     /// Why an attempt failed, and whether trying again could change that: the
     /// one retryable failure. A send answers with it, the resilience guards
     /// judge an attempt by it, and a crate's own retryable error converts into
-    /// it without losing the judgement.
+    /// it without losing the judgment.
     Failure
 );
 
@@ -117,7 +117,7 @@ mod tests {
     use alloc::string::ToString;
 
     #[test]
-    fn the_judgement_is_visible_in_the_message_and_survives_saying_where() {
+    fn the_judgment_is_visible_in_the_message_and_survives_saying_where() {
         assert_eq!(
             Failure::retryable("the peer hung up").to_string(),
             "the peer hung up (retryable)"

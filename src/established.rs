@@ -9,7 +9,7 @@ use core::fmt;
 /// How an identity came to be claimed. The first gate's own answer.
 ///
 /// Not how it is proven — that is [`Mechanism`] and [`Assurance`] — and not
-/// where it travelled, which is [`Layer`]. This is the question an operator
+/// where it traveled, which is [`Layer`]. This is the question an operator
 /// asks six months later when a Journey is disputed: *why did Xmip think this
 /// was party-x?*
 ///

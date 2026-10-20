@@ -54,7 +54,7 @@ macro_rules! id_type {
             }
         }
 
-        /// Serialised as the canonical UUID string, never as the `u128`.
+        /// Serialized as the canonical UUID string, never as the `u128`.
         ///
         /// TOML integers are 64-bit signed, so half of a `u128` cannot survive
         /// the trip. JSON has the same problem the moment JavaScript reads it.

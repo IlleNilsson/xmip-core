@@ -11,7 +11,7 @@
 //! Three accepted decisions meet in it. ADR-0019 makes the Party the identity
 //! holder in both directions. ADR-0022 classifies every identity by how it is
 //! proven and forbids two identity contexts from sharing a Host Service.
-//! ADR-0009 keeps roles out of it: a Party is recognised, a role is granted.
+//! ADR-0009 keeps roles out of it: a Party is recognized, a role is granted.
 //!
 //! It was one 705-line file called `identity.rs` until 2026-08-29. Six subjects
 //! shared that name, and two other crates had a file called `identity.rs`

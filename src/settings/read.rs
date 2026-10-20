@@ -426,7 +426,7 @@ mod tests {
             .read(
                 Applies::Send,
                 &given(&[
-                    ("colour", Given::Text("lime".into())),
+                    ("color", Given::Text("lime".into())),
                     ("port", Given::Text("9092".into())),
                     ("wait", Given::Text("1s".into())),
                     ("acks", Given::Text("most".into())),
@@ -436,7 +436,7 @@ mod tests {
         let said = alloc::format!("{refused}");
         assert_eq!(refused.0.len(), 5, "{said}");
         for word in [
-            "colour",
+            "color",
             "port",
             "wait",
             "acks",

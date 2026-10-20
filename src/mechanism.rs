@@ -77,14 +77,14 @@ impl fmt::Display for IdentityClass {
 /// MSH-3 is the same shape in healthcare, and MLLP gives it nothing to lean on.
 ///
 /// **This is what the protocol provides, not a choice Xmip makes.** X12 was
-/// standardised without cryptography and HL7 v2 travels over a framing protocol
+/// standardized without cryptography and HL7 v2 travels over a framing protocol
 /// with no security whatever. Xmip covers them because they are most of the
 /// installed base, and it covers them honestly — recording that a name was
 /// claimed rather than that a claim was proven.
 ///
 /// This value does not gate anything on its own. Every arrival is authenticated
 /// and authorized at runtime regardless, and authorization is where "may a
-/// Party recognised only by an ISA06 send this contract on this Path" is
+/// Party recognized only by an ISA06 send this contract on this Path" is
 /// answered. The distinction exists so that question has something true to read.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Assurance {
