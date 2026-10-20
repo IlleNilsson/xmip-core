@@ -59,15 +59,22 @@ impl Purpose {
     pub const fn needs_credential(self) -> bool {
         matches!(self, Self::Process | Self::Send)
     }
-}
 
-impl fmt::Display for Purpose {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
+    /// The word it is written in, here and nowhere else: what a Party's
+    /// configured identity says it is for (`xmip-core-configure`).
+    #[must_use]
+    pub const fn word(self) -> &'static str {
+        match self {
             Self::Receive => "receive",
             Self::Process => "process",
             Self::Send => "send",
             Self::Operate => "operate",
-        })
+        }
+    }
+}
+
+impl fmt::Display for Purpose {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.word())
     }
 }
