@@ -38,14 +38,14 @@ pub enum Purpose {
     ///
     /// The CLI, the PowerShell module, the MAUI desktop GUI and the Blazor web
     /// GUI all authenticate somebody, and that somebody is a Party like any
-    /// other — a person rather than a Party, but recognised the same
+    /// other — a person rather than a Party, but recognized the same
     /// way. ADR-0014.
     ///
     /// Matched, not presented: the operator proves themselves to Xmip, so this
     /// stores a matcher and no secret, exactly as [`Purpose::Receive`] does.
     ///
-    /// ADR-0009 still applies. Recognising an operator is not granting them
-    /// anything; a Party is recognised, a role is granted.
+    /// ADR-0009 still applies. Recognizing an operator is not granting them
+    /// anything; a Party is recognized, a role is granted.
     Operate,
 }
 
