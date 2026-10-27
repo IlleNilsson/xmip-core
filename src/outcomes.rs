@@ -1,4 +1,5 @@
-//! Failures accumulated per stage and reported like a compiler's: what,
+//! Outcomes accumulated per stage and reported once as a set — each item
+//! that succeeded, and each that failed like a compiler's error: what,
 //! where and, where it is known, why.
 //!
 //! The owner, 2026-10-27: *Failures during processing (Receive, Promote,
@@ -8,8 +9,11 @@
 //! failures, then report back*; and *All failures in each stage through Xmip
 //! shall report what, where and if possible why. Like a compiler, just
 //! batched per stage* (ADR-0013, amendment 2026-10-27). A stage goes on past
-//! an item that fails, gathers every failure in its [`Failures`], and fails
-//! once. Debatching reports with it today (`xmip-core-runtime`'s `split`);
+//! an item that fails, gathers every outcome in its [`Outcomes`], and fails
+//! once; and of a Send Port Group: *Report the results as a set. As for
+//! everything I've been asking for. Per stage, per action, per error.*
+//! Debatching and a Group's send report with it (`xmip-core-runtime`'s
+//! `split` and `send_step`);
 //! the other stages are open problem 51. The shape and its field names are
 //! decided (the field names with the owner's leave, 2026-10-27).
 
@@ -49,29 +53,54 @@ pub struct Failed {
     pub cause: Option<String>,
 }
 
-/// One stage's failures over its items, reported once.
+/// One item that succeeded: its position among the stage's items and the
+/// artifact it was, where one is named — a member Send Port of a Group.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Failures {
+pub struct Succeeded {
+    pub position: u64,
+    pub artifact: Option<String>,
+}
+
+/// One stage's outcomes over its items, reported once as a set: each that
+/// succeeded and each that failed (the owner, 2026-10-27: *Report the
+/// results as a set. As for everything I've been asking for. Per stage,
+/// per action, per error*).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Outcomes {
     /// The stage: `debatch`.
     pub stage: String,
     /// What one item is called, in the singular: `record`.
     pub item: String,
     /// How many items the stage took.
     pub total: u64,
+    /// Each that succeeded, in order.
+    pub succeeded: Vec<Succeeded>,
     /// Each that failed, in order.
     pub failed: Vec<Failed>,
 }
 
-impl Failures {
-    /// No failure yet, of `stage` over items called `item`.
+impl Outcomes {
+    /// No outcome yet, of `stage` over items called `item`.
     #[must_use]
     pub fn new(stage: impl Into<String>, item: impl Into<String>) -> Self {
         Self {
             stage: stage.into(),
             item: item.into(),
             total: 0,
+            succeeded: Vec::new(),
             failed: Vec::new(),
         }
+    }
+
+    /// The item at `position` succeeded, `artifact` where one is named.
+    pub fn succeed(&mut self, position: u64, artifact: Option<String>) {
+        self.succeeded.push(Succeeded { position, artifact });
+    }
+
+    /// How many items succeeded.
+    #[must_use]
+    pub fn succeeded_count(&self) -> usize {
+        self.succeeded.len()
     }
 
     /// The next item taken: its position, from one.
@@ -115,6 +144,12 @@ impl Failures {
     pub fn is_empty(&self) -> bool {
         self.failed.is_empty()
     }
+
+    /// Whether every item taken has its outcome: the set is complete.
+    #[must_use]
+    pub fn complete(&self) -> bool {
+        (self.succeeded.len() + self.failed.len()) as u64 >= self.total
+    }
 }
 
 /// A summary line, then a block per failure, as a compiler prints:
@@ -125,16 +160,22 @@ impl Failures {
 ///   --> debatch, unit 'Lines' of 'Units', record 2, line 1, column 4
 ///   = cause: …
 /// ```
-impl fmt::Display for Failures {
+impl fmt::Display for Outcomes {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let plural = if self.total == 1 { "" } else { "s" };
         write!(
             f,
-            "error: {}: {} of {} {}{plural} failed",
+            "{}: {}: {} {}{plural}, {} succeeded, {} failed",
+            if self.failed.is_empty() {
+                "ok"
+            } else {
+                "error"
+            },
             self.stage,
-            self.failed.len(),
             self.total,
-            self.item
+            self.item,
+            self.succeeded.len(),
+            self.failed.len()
         )?;
         for failed in &self.failed {
             write!(f, "\n{}", Block(failed, &self.item))?;
@@ -180,15 +221,17 @@ impl fmt::Display for Block<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::Failures;
+    use super::Outcomes;
     use alloc::string::{String, ToString};
 
     #[test]
     fn a_summary_line_then_a_block_per_failure_like_a_compiler() {
-        let mut failures = Failures::new("debatch", "record");
+        let mut failures = Outcomes::new("debatch", "record");
         for _ in 0..5 {
             let at = failures.took();
-            if at.is_multiple_of(2) {
+            if !at.is_multiple_of(2) {
+                failures.succeed(at, None);
+            } else {
                 let unit = Some(String::from("unit 'Lines' of 'Units'"));
                 let failed = failures.fail(("record-refused", "no record"), unit, at);
                 failed.at.line = Some(1);
@@ -198,10 +241,14 @@ mod tests {
                 }
             }
         }
-        assert_eq!(failures.failed_count(), 2);
+        assert_eq!(
+            (failures.succeeded_count(), failures.failed_count()),
+            (3, 2)
+        );
+        assert!(failures.complete());
         assert_eq!(
             failures.to_string(),
-            "error: debatch: 2 of 5 records failed\n\
+            "error: debatch: 5 records, 3 succeeded, 2 failed\n\
              error[record-refused]: no record\n  \
              --> debatch, unit 'Lines' of 'Units', record 2, line 1, column 4\n\
              error[record-refused]: no record\n  \
