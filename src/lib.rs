@@ -41,6 +41,7 @@ mod credential;
 mod direction;
 mod error;
 mod established;
+mod failures;
 mod id;
 mod isolation;
 mod phase;
@@ -76,6 +77,7 @@ pub use credential::CredentialRef;
 pub use direction::{Arriving, Departing};
 pub use error::Failure;
 pub use established::Established;
+pub use failures::{Failed, Failures};
 #[cfg(feature = "uuid-v7")]
 pub use id::UuidV7Generator;
 pub use id::{
