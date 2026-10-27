@@ -77,7 +77,7 @@ pub use credential::CredentialRef;
 pub use direction::{Arriving, Departing};
 pub use error::Failure;
 pub use established::Established;
-pub use failures::{Failed, Failures};
+pub use failures::{Failed, Failures, Place};
 #[cfg(feature = "uuid-v7")]
 pub use id::UuidV7Generator;
 pub use id::{
