@@ -41,9 +41,9 @@ mod credential;
 mod direction;
 mod error;
 mod established;
-mod failures;
 mod id;
 mod isolation;
+mod outcomes;
 mod phase;
 mod purpose;
 mod scalar;
@@ -77,7 +77,6 @@ pub use credential::CredentialRef;
 pub use direction::{Arriving, Departing};
 pub use error::Failure;
 pub use established::Established;
-pub use failures::{Failed, Failures, Place};
 #[cfg(feature = "uuid-v7")]
 pub use id::UuidV7Generator;
 pub use id::{
@@ -86,6 +85,7 @@ pub use id::{
 };
 pub use isolation::IdentityContext;
 pub use mechanism::{Assurance, IdentityClass, Layer, Mechanism};
+pub use outcomes::{Failed, Outcomes, Place, Succeeded};
 pub use phase::ExecutionPhase;
 pub use purpose::Purpose;
 pub use scalar::ScalarValue;
