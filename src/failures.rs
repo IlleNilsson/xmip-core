@@ -10,8 +10,8 @@
 //! batched per stage* (ADR-0013, amendment 2026-10-27). A stage goes on past
 //! an item that fails, gathers every failure in its [`Failures`], and fails
 //! once. Debatching reports with it today (`xmip-core-runtime`'s `split`);
-//! the other stages are open problem 51. The field names are drafts for the
-//! owner; the shape is decided.
+//! the other stages are open problem 51. The shape and its field names are
+//! decided (the field names with the owner's leave, 2026-10-27).
 
 use alloc::string::String;
 use alloc::vec::Vec;
