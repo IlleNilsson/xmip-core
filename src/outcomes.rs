@@ -14,7 +14,7 @@
 //! everything I've been asking for. Per stage, per action, per error.*
 //! Debatching and a Group's send report with it (`xmip-core-runtime`'s
 //! `split` and `send_step`);
-//! the other stages are open problem 51. The shape and its field names are
+//! the other stages are open problem 55. The shape and its field names are
 //! decided (the field names with the owner's leave, 2026-10-27).
 
 use alloc::string::String;
