@@ -18,6 +18,44 @@ pub(crate) use windows::{process_cycles, thread_cycles};
 #[cfg(all(unix, feature = "test-support"))]
 pub(crate) use unix::{process_cpu_nanos, thread_cpu_nanos};
 
+#[cfg(feature = "test-support")]
+pub use allocator::Counted;
+#[cfg(feature = "test-support")]
+pub(crate) use allocator::{HELD, MOST};
+
+/// The system's allocator, counting what the process holds: the one
+/// `GlobalAlloc` the estate's tests of bounded memory install
+/// (`crate::held`).
+#[cfg(feature = "test-support")]
+mod allocator {
+    use std::alloc::{GlobalAlloc, Layout, System};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    /// The system's allocator, counting what is held and the most held
+    /// since the count was last reset.
+    pub struct Counted;
+
+    pub(crate) static HELD: AtomicUsize = AtomicUsize::new(0);
+    pub(crate) static MOST: AtomicUsize = AtomicUsize::new(0);
+
+    // SAFETY: every call is the system allocator's own, with the layout it
+    // was given; the counts only watch.
+    unsafe impl GlobalAlloc for Counted {
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            let held = HELD.fetch_add(layout.size(), Ordering::Relaxed) + layout.size();
+            MOST.fetch_max(held, Ordering::Relaxed);
+            // SAFETY: as the caller promised the layout.
+            unsafe { System.alloc(layout) }
+        }
+
+        unsafe fn dealloc(&self, at: *mut u8, layout: Layout) {
+            HELD.fetch_sub(layout.size(), Ordering::Relaxed);
+            // SAFETY: `at` came from `alloc` with `layout`.
+            unsafe { System.dealloc(at, layout) }
+        }
+    }
+}
+
 #[cfg(windows)]
 mod windows {
     use std::ptr::null;

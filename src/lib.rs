@@ -57,6 +57,9 @@ pub mod settings;
 #[cfg(feature = "std")]
 pub mod wake;
 
+/// What the process holds in memory, for tests of bounded memory.
+#[cfg(feature = "test-support")]
+pub mod held;
 /// The one latency spread the estate's tests hold a wait to.
 #[cfg(feature = "test-support")]
 pub mod latency;
