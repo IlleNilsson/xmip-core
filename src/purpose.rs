@@ -16,8 +16,8 @@ use core::fmt;
 /// ```text
 /// Receive    a Party arrives          matcher
 /// Operate    a person drives Xmip       matcher
-/// Process    Xmip runs as somebody      credential
-/// Send       Xmip is the client         credential
+/// Process    Xmip runs as somebody      secret
+/// Send       Xmip is the client         secret
 /// ```
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Purpose {
@@ -50,13 +50,13 @@ pub enum Purpose {
 }
 
 impl Purpose {
-    /// Whether this purpose requires credential material rather than a matcher.
+    /// Whether this purpose presents a secret rather than holding a matcher.
     ///
     /// Receiving and operating both compare an arriving credential against a
     /// stored name and need no secret. Processing and sending mean producing
     /// proof, so both name where the material is kept.
     #[must_use]
-    pub const fn needs_credential(self) -> bool {
+    pub const fn needs_secret(self) -> bool {
         matches!(self, Self::Process | Self::Send)
     }
 

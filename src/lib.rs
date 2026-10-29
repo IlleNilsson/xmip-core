@@ -37,7 +37,6 @@ extern crate alloc;
 extern crate std;
 
 mod clock;
-mod credential;
 mod direction;
 mod error;
 mod established;
@@ -47,6 +46,7 @@ mod outcomes;
 mod phase;
 mod purpose;
 mod scalar;
+mod secret;
 mod severity;
 
 pub mod mechanism;
@@ -76,7 +76,6 @@ mod system;
 #[cfg(feature = "std")]
 pub use clock::SystemClock;
 pub use clock::{Clock, NANOS_A_SECOND};
-pub use credential::CredentialRef;
 pub use direction::{Arriving, Departing};
 pub use error::Failure;
 pub use established::Established;
@@ -92,4 +91,5 @@ pub use outcomes::{Failed, Outcomes, Place, Succeeded};
 pub use phase::ExecutionPhase;
 pub use purpose::Purpose;
 pub use scalar::ScalarValue;
+pub use secret::{SECRET_NAME_LONGEST, Secret, SecretKind, SecretName, Secrets};
 pub use severity::Severity;

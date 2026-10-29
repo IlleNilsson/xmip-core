@@ -45,6 +45,11 @@ serde = { version = "1", default-features = false, features = ["alloc", "derive"
 # this feature was optional before any of this.
 uuid = { version = "1", features = ["v7"], optional = true }
 
+# A secret's value is overwritten when it is dropped (secret.rs), never left
+# for the allocator. no_std with alloc, as this crate is; the version
+# xmip-core-secret already builds.
+zeroize = { version = "1", default-features = false, features = ["alloc"] }
+
 # The operating system's calls (system.rs): on Windows the timed wait's
 # kernel event and high-resolution waitable timer (the owner, 2026-10-16)
 # and, for tests, the cycle counts. The version the runtime, audit and
