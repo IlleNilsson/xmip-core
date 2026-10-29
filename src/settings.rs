@@ -102,7 +102,7 @@ pub enum Kind {
     /// Where something is, in the technology's own terms: a host and port, a
     /// URL, a path, a device. Never empty.
     Address,
-    /// The name of a secret, never the secret: what `credentials` is on a
+    /// The name of a secret, never the secret: what `secret` is on a
     /// Location, for a second one the technology needs. Never empty.
     Secret,
     /// One of the words listed, exactly as written.
