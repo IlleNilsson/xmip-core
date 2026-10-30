@@ -140,7 +140,7 @@ pub fn anonymous() -> Mechanism {
 
 /// X12 ISA05–ISA08. **Identifies. Does not authenticate.**
 ///
-/// Enough to route and bill a Journey. Proving it is the transport's job,
+/// Enough to route and bill a Message. Proving it is the transport's job,
 /// or AS2's.
 #[must_use]
 pub fn edi_x12_interchange() -> Mechanism {
