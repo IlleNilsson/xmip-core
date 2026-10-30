@@ -73,7 +73,7 @@ impl fmt::Display for IdentityClass {
 /// X12's ISA06 and EDIFACT's UNB S002 name the counterparty and carry no
 /// cryptography whatever. `identity-by-technology.md` calls treating them as
 /// authentication "the classic B2B mistake": they are enough to route and bill
-/// a Journey, and proving the claim is the transport's job, or AS2's. HL7's
+/// a Message, and proving the claim is the transport's job, or AS2's. HL7's
 /// MSH-3 is the same shape in healthcare, and MLLP gives it nothing to lean on.
 ///
 /// **This is what the protocol provides, not a choice Xmip makes.** X12 was
