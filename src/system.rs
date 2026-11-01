@@ -1,8 +1,9 @@
 //! xmip-core's calls to the operating system, each behind a safe function:
 //! on Windows the kernel event and the high-resolution waitable timer the
-//! timed wait is made of (`wake`; the owner, 2026-10-16), and, for tests,
-//! the processor time a thread and the process have used (`processor_time`)
-//! — cycles on Windows, nanoseconds on Unix.
+//! timed wait is made of (`wake`; the owner, 2026-10-16), and the processor
+//! time a thread and the process have used (`processor_time`), which a
+//! node's own share of a Message is counted in — cycles on Windows,
+//! nanoseconds on Unix.
 //!
 //! The one file in this crate that may hold unsafe code (ADR-0050,
 //! amendment 2026-10-17): these are C interfaces and are reached no other
@@ -10,12 +11,14 @@
 //! and who closes the handles.
 #![allow(unsafe_code)]
 
+#[cfg(all(windows, target_arch = "x86_64"))]
+pub(crate) use windows::time_stamp;
 #[cfg(windows)]
 pub(crate) use windows::{Event, Timer, either};
-#[cfg(all(windows, feature = "test-support"))]
+#[cfg(windows)]
 pub(crate) use windows::{process_cycles, thread_cycles};
 
-#[cfg(all(unix, feature = "test-support"))]
+#[cfg(all(unix, feature = "std"))]
 pub(crate) use unix::{process_cpu_nanos, thread_cpu_nanos};
 
 #[cfg(feature = "test-support")]
@@ -183,7 +186,6 @@ mod windows {
     }
 
     /// Processor cycles this thread has used; none where Windows says no.
-    #[cfg(feature = "test-support")]
     pub(crate) fn thread_cycles() -> Option<u64> {
         use windows_sys::Win32::System::Threading::GetCurrentThread;
         use windows_sys::Win32::System::WindowsProgramming::QueryThreadCycleTime;
@@ -194,8 +196,17 @@ mod windows {
         (done != 0).then_some(cycles)
     }
 
+    /// The processor's time-stamp counter now: what Windows counts a
+    /// thread's cycles in on x86 (`QueryThreadCycleTime`), ticking whether
+    /// the calling thread runs or not.
+    #[cfg(target_arch = "x86_64")]
+    pub(crate) fn time_stamp() -> u64 {
+        // SAFETY: RDTSC reads a counter and touches no memory; every x86-64
+        // processor has it.
+        unsafe { core::arch::x86_64::_rdtsc() }
+    }
+
     /// Processor cycles the process has used; none where Windows says no.
-    #[cfg(feature = "test-support")]
     pub(crate) fn process_cycles() -> Option<u64> {
         use windows_sys::Win32::System::Threading::GetCurrentProcess;
         use windows_sys::Win32::System::WindowsProgramming::QueryProcessCycleTime;
@@ -207,7 +218,7 @@ mod windows {
     }
 }
 
-#[cfg(all(unix, feature = "test-support"))]
+#[cfg(all(unix, feature = "std"))]
 mod unix {
     /// Nanoseconds of processor time this thread has used.
     pub(crate) fn thread_cpu_nanos() -> Option<u64> {

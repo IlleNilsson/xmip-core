@@ -16,15 +16,15 @@ description = "Core identifiers, execution facts and shared contracts for Xmip."
 default = ["serde", "std", "uuid-v7"]
 uuid-v7 = ["std", "dep:uuid"]
 
-# The system clock (clock.rs) and the timed wait (wake.rs). Off on a
-# microcontroller, which supplies its own Clock as it supplies its own
-# IdGenerator.
-std = ["dep:windows-sys"]
+# The system clock (clock.rs), the timed wait (wake.rs) and the processor
+# time a thread has used (processor_time.rs), which a node's own share of a
+# Message is counted in (spent.rs). Off on a microcontroller, which supplies
+# its own Clock as it supplies its own IdGenerator.
+std = ["dep:windows-sys", "dep:libc"]
 
-# What the estate's tests measure with: the processor time a thread and the
-# process have used (processor_time.rs) and the one latency spread
-# (latency.rs). Never in a node.
-test-support = ["std", "dep:libc"]
+# What the estate's tests measure with beside it: the process's processor
+# time and the one latency spread (latency.rs). Never in a node.
+test-support = ["std"]
 
 # Identifiers appear in every serialised structure in Xmip, so this is on by
 # default. Optional so a consumer who serialises nothing pays for nothing.
@@ -52,7 +52,7 @@ zeroize = { version = "1", default-features = false, features = ["alloc"] }
 
 # The operating system's calls (system.rs): on Windows the timed wait's
 # kernel event and high-resolution waitable timer (the owner, 2026-10-16)
-# and, for tests, the cycle counts. The version the runtime, audit and
+# and the cycle counts. The version the runtime, audit and
 # secret already build, so nothing new is compiled.
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", optional = true, features = [
@@ -62,7 +62,7 @@ windows-sys = { version = "0.61", optional = true, features = [
     "Win32_System_WindowsProgramming",
 ] }
 
-# For tests on Unix, the processor time a thread and the process have used:
+# On Unix, the processor time a thread and the process have used:
 # clock_gettime (system.rs). In the lock already.
 [target.'cfg(unix)'.dependencies]
 libc = { version = "0.2", optional = true }
