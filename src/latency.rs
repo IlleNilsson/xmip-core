@@ -5,7 +5,8 @@
 //! through [`spread`], so the figure is computed once.
 //!
 //! What is held is [`Spread::fastest_of_five`]: the median of the fastest
-//! round in each five. A poll, a missed notify or a busy loop is in every
+//! round in each five, computed by `crate::fastest`, which a running node's
+//! own report reads too. A poll, a missed notify or a busy loop is in every
 //! round, and so in the fastest of each five too; a wake that waited its
 //! turn for a processor on a loaded machine is in some rounds only, and is
 //! not. The median, the 99th percentile and the worst are printed and held
@@ -17,10 +18,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 use std::vec::Vec;
 
+use crate::fastest::{FIVE, FastestOfFive};
 use crate::processor_time::ProcessorTime;
-
-/// How many rounds the fastest is taken from.
-pub const FIVE: usize = 5;
 
 /// A distribution of measured rounds.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -46,16 +45,15 @@ pub struct Spread {
 #[must_use]
 pub fn spread(what: &str, taken: Vec<Duration>) -> Spread {
     assert!(!taken.is_empty(), "{what}: nothing was measured");
-    let mut fastest: Vec<Duration> = taken
-        .chunks(FIVE)
-        .filter_map(|five| five.iter().min().copied())
-        .collect();
-    fastest.sort();
+    let mut fastest = FastestOfFive::new();
+    for round in &taken {
+        fastest.push(*round);
+    }
     let mut sorted = taken;
     sorted.sort();
     let at = |percent: usize| sorted[(sorted.len() - 1) * percent / 100];
     let spread = Spread {
-        fastest_of_five: fastest[(fastest.len() - 1) / 2],
+        fastest_of_five: fastest.read().expect("measured"),
         median: at(50),
         p99: at(99),
         worst: at(100),

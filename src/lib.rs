@@ -49,10 +49,17 @@ mod scalar;
 mod secret;
 mod severity;
 
+/// The fastest of five: the figure the millisecond rule holds a measured
+/// time to, for a node's own report and every test.
+pub mod fastest;
 pub mod mechanism;
 /// What a technology can be configured with, declared once by the technology
 /// (ADR-0064, amendment 2026-09-26).
 pub mod settings;
+/// What one Message spends on its own I/O, and Xmip's own share of its
+/// time beside it.
+#[cfg(feature = "std")]
+pub mod spent;
 /// A thread waiting under a lock until woken or due, its due time kept to
 /// the microsecond (the owner, 2026-10-16).
 #[cfg(feature = "std")]
@@ -64,8 +71,9 @@ pub mod held;
 /// The one latency spread the estate's tests hold a wait to.
 #[cfg(feature = "test-support")]
 pub mod latency;
-/// The processor time a thread and the process have used, for tests.
-#[cfg(feature = "test-support")]
+/// The processor time a thread and the process have used: what a node's
+/// own share of a Message is counted in.
+#[cfg(feature = "std")]
 pub mod processor_time;
 
 /// The crate's calls to the operating system, behind safe functions: the

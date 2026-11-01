@@ -72,6 +72,16 @@ pub fn oidc() -> Mechanism {
     Mechanism::declare("oidc", Federated, Transport, Authenticates)
 }
 
+/// The sender a message broker delivered a message as — AMQP's `user-id`,
+/// IBM MQ's `UserIdentifier`, SQS's `SenderId` — which the broker checked
+/// against the connection it authenticated. Vouched where Xmip's own
+/// connection proved the broker, claimed otherwise (ADR-0019, amendment
+/// 2026-10-31).
+#[must_use]
+pub fn broker() -> Mechanism {
+    Mechanism::declare("broker", Federated, Transport, Authenticates)
+}
+
 // -- Transport: a secret both sides hold --------------------------------
 
 /// RFC 7617.
