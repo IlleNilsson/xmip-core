@@ -76,6 +76,15 @@ path = "src/lib.rs"
 [lints.rust]
 unsafe_code = "deny"
 
+# The module's timing program (doc/governance/rust-style.md section 5c): a
+# plain cargo test leaves it out, and the landing runs it after every other
+# test here, alone, one test at a time, so what it measures is its work.
+[[test]]
+name = "measured"
+path = "tests/measured/main.rs"
+test = false
+required-features = ["std"]
+
 [dev-dependencies]
 # Only to prove an identifier serialises as text rather than as a number.
 serde_json = "1"
