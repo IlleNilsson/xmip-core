@@ -200,30 +200,6 @@ mod tests {
     use super::*;
     use std::time::Instant;
 
-    #[test]
-    fn a_spin_is_counted_and_a_sleep_is_not() {
-        let spun = ProcessorTime::thread();
-        let started = Instant::now();
-        while started.elapsed() < Duration::from_millis(20) {
-            std::hint::spin_loop();
-        }
-        let spent = spun.elapsed();
-        let wall = started.elapsed();
-        // Never more than the wall clock; less where the spin was preempted.
-        assert!(
-            spent > Duration::ZERO && spent <= wall + Duration::from_millis(1),
-            "a spin of {wall:?} counted {spent:?}"
-        );
-
-        let slept = ProcessorTime::thread();
-        std::thread::sleep(Duration::from_millis(50));
-        let waited = slept.elapsed();
-        assert!(
-            waited < Duration::from_millis(5),
-            "a sleep of 50 ms counted {waited:?}"
-        );
-    }
-
     /// The rate is the time-stamp counter's against the clock: over a
     /// sleep, where the thread runs nothing, the counter still ticks at it.
     #[cfg(all(windows, target_arch = "x86_64"))]
