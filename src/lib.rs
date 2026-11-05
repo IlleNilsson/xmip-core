@@ -4,7 +4,7 @@
 
 //! The identity vocabulary lives here rather than in `xmip-core-party` because
 //! the three gates need it and none of them may depend on the Party.
-//! `architecture.toml` gives `xmip-core-identify`, `xmip-core-authenticate` and
+//! `architecture.xmip` gives `xmip-core-identify`, `xmip-core-authenticate` and
 //! `xmip-core-authorize` no dependency on `xmip-core-party`, and it is right:
 //! authenticating a credential is not the same as knowing whose it is.
 //!
@@ -52,6 +52,9 @@ mod severity;
 /// The fastest of five: the figure the millisecond rule holds a measured
 /// time to, for a node's own report and every test.
 pub mod fastest;
+/// The working state a step keeps between Streams, made once and reset.
+#[cfg(feature = "std")]
+pub mod kept;
 pub mod mechanism;
 /// What a technology can be configured with, declared once by the technology
 /// (ADR-0064, amendment 2026-09-26).
