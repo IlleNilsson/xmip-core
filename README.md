@@ -13,7 +13,10 @@ default `std` feature; a wire that counts seconds converts at the wire with
 a `Condvar`'s shape whose due time is kept to the microsecond — on Windows a
 kernel event and a high-resolution waitable timer per waiting thread, the
 calls in `system.rs`, the crate's one file of unsafe code (behind `std`;
-ADR-0050, amendment 2026-10-17); the identity vocabulary the three gates share, with
+ADR-0050, amendment 2026-10-17); what an opened step keeps between Streams,
+`kept::Kept`, its state made once and reset, with the pieces a Stream is
+read and written through (`kept/reading.rs`, `kept/writing.rs`; behind
+`std`); the identity vocabulary the three gates share, with
 the catalog of the mechanisms Xmip implements (`mechanism/declared.rs`,
 ADR-0050); and `settings`: the
 shape in which every technology of every capability declares what a
@@ -37,4 +40,4 @@ authenticating a credential is not the same as knowing whose it is.
 
 ADR-0019 makes the Party the identity holder in both directions, ADR-0022
 classifies every identity by how it is proven, and ADR-0009 keeps roles out of
-it; `architecture.toml` carries the maturity.
+it; `architecture.xmip` carries the maturity.
