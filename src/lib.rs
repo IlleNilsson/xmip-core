@@ -55,6 +55,9 @@ pub mod fastest;
 /// The working state a step keeps between Streams, made once and reset.
 #[cfg(feature = "std")]
 pub mod kept;
+/// A lock taken even where another thread panicked holding it, in one place.
+#[cfg(feature = "std")]
+pub mod lock;
 pub mod mechanism;
 /// What a technology can be configured with, declared once by the technology
 /// (ADR-0064, amendment 2026-09-26).

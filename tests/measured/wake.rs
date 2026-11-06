@@ -1,10 +1,11 @@
 //! A thread waiting under a lock until woken or due (`xmip_core::wake`),
 //! held to the millisecond.
 
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use xmip_core::lock::Locked;
 use xmip_core::wake::Wake;
 
 /// The median, the 99th percentile and the worst of `taken`.
@@ -12,12 +13,6 @@ fn spread(mut taken: Vec<Duration>) -> (Duration, Duration, Duration) {
     taken.sort();
     let at = |percent: usize| taken[(taken.len() - 1) * percent / 100];
     (at(50), at(99), at(100))
-}
-
-fn relock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
-    mutex
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// A due time is kept within a millisecond, apart from load: held to
@@ -32,7 +27,7 @@ fn a_wait_ends_within_a_millisecond_of_its_due_time() {
     let (mut late, mut control) = (Vec::new(), Vec::new());
     for _ in 0..200 {
         let began = Instant::now();
-        let (guard, came) = wake.wait_timeout(&mutex, relock(&mutex), DUE);
+        let (guard, came) = wake.wait_timeout(&mutex, mutex.locked(), DUE);
         late.push(began.elapsed().saturating_sub(DUE));
         assert!(came, "nothing notified");
         drop(guard);
@@ -67,7 +62,7 @@ fn a_notify_wakes_within_a_millisecond() {
         thread::spawn(move || {
             let (mutex, wake) = &*shared;
             let mut taken = Vec::new();
-            let mut guard = relock(mutex);
+            let mut guard = mutex.locked();
             for _ in 0..200 {
                 let (again, came) =
                     wake.wait_timeout_while(mutex, guard, Duration::from_secs(5), |sent| {
@@ -81,11 +76,11 @@ fn a_notify_wakes_within_a_millisecond() {
         })
     };
     for _ in 0..200 {
-        while relock(&shared.0).is_some() {
+        while shared.0.locked().is_some() {
             thread::sleep(Duration::from_micros(100));
         }
         thread::sleep(Duration::from_micros(300));
-        *relock(&shared.0) = Some(Instant::now());
+        *shared.0.locked() = Some(Instant::now());
         shared.1.notify_one();
     }
     let taken = spread(waiter.join().expect("woken")).1;

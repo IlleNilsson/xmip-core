@@ -155,6 +155,7 @@ impl Wake {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lock::Locked;
     use std::sync::Arc;
     use std::thread;
     use std::vec::Vec;
@@ -170,7 +171,7 @@ mod tests {
                 let shared = Arc::clone(&shared);
                 thread::spawn(move || {
                     let (mutex, wake, told) = &*shared;
-                    let mut guard = relock(mutex);
+                    let mut guard = mutex.locked();
                     guard.0 += 1;
                     told.notify_all();
                     // Woken without being let go: only by a notify.
@@ -184,10 +185,10 @@ mod tests {
             .collect();
         let (mutex, wake, told) = &*shared;
         let within = Duration::from_secs(5);
-        let (state, _) = told.wait_timeout_while(mutex, relock(mutex), within, |s| s.0 < 4);
+        let (state, _) = told.wait_timeout_while(mutex, mutex.locked(), within, |s| s.0 < 4);
         drop(state);
         wake.notify_one();
-        let (state, _) = told.wait_timeout_while(mutex, relock(mutex), within, |s| s.0 > 3);
+        let (state, _) = told.wait_timeout_while(mutex, mutex.locked(), within, |s| s.0 > 3);
         assert_eq!(state.0, 3, "one woken");
         let (mut state, came) =
             told.wait_timeout_while(mutex, state, Duration::from_millis(50), |s| s.0 == 3);
@@ -198,7 +199,7 @@ mod tests {
         for waiter in waiters {
             waiter.join().expect("woken");
         }
-        assert_eq!(relock(mutex).0, 0, "all woken");
+        assert_eq!(mutex.locked().0, 0, "all woken");
     }
 
     /// A notify that races a due time is the waiter's, never lost and never
@@ -217,11 +218,11 @@ mod tests {
         };
         let (mutex, wake) = &*shared;
         while !notifier.is_finished() {
-            let _ = wake.wait_timeout(mutex, relock(mutex), Duration::from_micros(50));
+            let _ = wake.wait_timeout(mutex, mutex.locked(), Duration::from_micros(50));
         }
         notifier.join().expect("notified");
         let began = Instant::now();
-        let (guard, came) = wake.wait_timeout(mutex, relock(mutex), Duration::from_millis(20));
+        let (guard, came) = wake.wait_timeout(mutex, mutex.locked(), Duration::from_millis(20));
         drop(guard);
         assert!(came, "nothing left to wake it");
         assert!(
@@ -236,14 +237,8 @@ mod tests {
     fn a_due_time_past_does_not_wait() {
         let wake = Wake::new();
         let mutex = Mutex::new(());
-        let (guard, came) = wake.wait_until(&mutex, relock(&mutex), Instant::now());
+        let (guard, came) = wake.wait_until(&mutex, mutex.locked(), Instant::now());
         drop(guard);
         assert!(came);
-    }
-
-    fn relock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
-        mutex
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 }
