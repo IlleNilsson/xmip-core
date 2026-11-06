@@ -2,10 +2,11 @@
 //! thread tells others that something changed, at once, without their
 //! looking again and again. Revision 0 is nothing raised yet.
 
-use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 
 use super::Wake;
+use crate::lock::Locked;
 
 /// A revision raised by one thread and waited on by others.
 #[derive(Debug, Default)]
@@ -25,7 +26,7 @@ impl Revision {
     }
 
     fn count(&self) -> MutexGuard<'_, u64> {
-        self.count.lock().unwrap_or_else(PoisonError::into_inner)
+        self.count.locked()
     }
 
     /// Raise it, waking every thread waiting; the revision now. It never

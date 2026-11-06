@@ -21,7 +21,9 @@ pub use writing::Writing;
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use std::sync::{Mutex, PoisonError};
+use std::sync::Mutex;
+
+use crate::lock::Locked;
 
 /// The idle states of one opened step, and how to make another.
 pub struct Kept<T> {
@@ -42,17 +44,10 @@ impl<T: Send> Kept<T> {
     /// A state is given back as `work` leaves it, so `work` resets what it
     /// relies on before it starts. A state `work` panicked in is dropped.
     pub fn with<R>(&self, work: impl FnOnce(&mut T) -> R) -> R {
-        let idle = self
-            .idle
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .pop();
+        let idle = self.idle.locked().pop();
         let mut state = idle.unwrap_or_else(|| (self.make)());
         let done = work(&mut state);
-        self.idle
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .push(state);
+        self.idle.locked().push(state);
         done
     }
 }

@@ -7,9 +7,10 @@
 
 use std::collections::VecDeque;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
+use crate::lock::Locked;
 use crate::system::{Event, Timer, either};
 
 /// One thread's event and timer.
@@ -71,7 +72,7 @@ impl Waiters {
     }
 
     fn waiting(&self) -> MutexGuard<'_, VecDeque<Arc<Event>>> {
-        self.waiting.lock().unwrap_or_else(PoisonError::into_inner)
+        self.waiting.locked()
     }
 
     /// Wait until notified or `until`; whether `until` came. Listed before
@@ -97,7 +98,7 @@ impl Waiters {
             own.event.wait();
             came = false;
         }
-        (mutex.lock().unwrap_or_else(PoisonError::into_inner), came)
+        (mutex.locked(), came)
     }
 
     /// Take `event` off the list; whether it was on it.
