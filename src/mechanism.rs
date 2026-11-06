@@ -9,13 +9,64 @@
 //!
 //! A mechanism is declared by the module that implements it, through
 //! [`Mechanism::declare`], and is never built from configuration. The ones Xmip
-//! implements itself are in [`declared`].
+//! implements itself are in [`declared`]; a word a configuration writes for one
+//! is looked up among the declarations ([`named`]), and finds one or none.
 
 use alloc::string::String;
 use core::fmt;
 
 mod declared;
 pub use declared::*;
+
+/// Every mechanism Xmip itself declares.
+const DECLARED: &[fn() -> Mechanism] = &[
+    mutual_tls,
+    kerberos,
+    certificate,
+    ssh_key,
+    passkey,
+    peer_credentials,
+    oauth2,
+    oidc,
+    broker,
+    basic,
+    digest,
+    bearer,
+    api_key,
+    scram,
+    password,
+    circumstance,
+    anonymous,
+    edi_x12_interchange,
+    ip,
+    mac,
+    dns,
+    header,
+    cookie,
+    username,
+    endpoint,
+    party,
+    transport,
+    jwt,
+    saml,
+    ntlm,
+    ldap,
+    pam,
+    windows,
+    message,
+    contract,
+];
+
+/// The mechanism Xmip itself declares under `name`, where it declares one:
+/// what a configuration's word for a mechanism, such as a Party's identity's,
+/// is looked up in. Nothing is built from the word.
+#[must_use]
+pub fn named(name: &str) -> Option<Mechanism> {
+    DECLARED
+        .iter()
+        .map(|declare| declare())
+        .find(|mechanism| mechanism.name() == name)
+}
 
 /// Where an identity travels.
 ///
@@ -161,5 +212,22 @@ impl Mechanism {
     #[must_use]
     pub const fn authenticates(&self) -> bool {
         matches!(self.assurance, Assurance::Authenticates)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DECLARED, named, ssh_key};
+
+    #[test]
+    fn a_word_finds_the_declaration_under_it_and_a_stranger_none() {
+        assert_eq!(named(ssh_key().name()), Some(ssh_key()));
+        assert_eq!(named("not-declared"), None);
+
+        let mut names: alloc::vec::Vec<_> = DECLARED.iter().map(|declare| declare()).collect();
+        let all = names.len();
+        names.sort_by(|one, other| one.name().cmp(other.name()));
+        names.dedup_by(|one, other| one.name() == other.name());
+        assert_eq!(names.len(), all, "a name is declared once");
     }
 }
