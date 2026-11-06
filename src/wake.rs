@@ -17,17 +17,22 @@
 //! lock is let go of and taken again here, and std gives a guard no way to
 //! name its lock. A guard from another lock unlocks that one and returns
 //! this one's: wrong, never unsound.
+//!
+//! [`Revision`] is the wait most of the estate needs: a count one thread
+//! raises and others wait past, built on [`Wake`] once.
 
 use std::sync::{Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 #[cfg(not(windows))]
 mod portable;
+mod revision;
 #[cfg(windows)]
 mod windows;
 
 #[cfg(not(windows))]
 use portable::Waiters;
+pub use revision::Revision;
 #[cfg(windows)]
 use windows::Waiters;
 
