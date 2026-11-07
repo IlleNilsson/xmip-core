@@ -29,9 +29,6 @@
 //! which need no rate. `GetThreadTimes` is not used: it moves a clock tick,
 //! about 15.6 ms, at a time.
 
-#[cfg(not(any(windows, unix)))]
-compile_error!("processor time is read on Windows and on unix only");
-
 use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -115,84 +112,91 @@ impl ProcessorTime {
     }
 }
 
-#[cfg(windows)]
-fn count(scope: Scope) -> Option<u64> {
-    match scope {
-        Scope::Thread => crate::system::thread_cycles(),
-        Scope::Process => crate::system::process_cycles(),
-    }
-}
-
-#[cfg(unix)]
-fn count(scope: Scope) -> Option<u64> {
-    match scope {
-        Scope::Thread => crate::system::thread_cpu_nanos(),
-        Scope::Process => crate::system::process_cpu_nanos(),
-    }
-}
-
-#[cfg(windows)]
-fn duration(cycles: u64) -> Duration {
-    let nanos = u128::from(cycles) * 1_000_000_000 / u128::from(cycles_a_second());
-    Duration::from_nanos(u64::try_from(nanos).unwrap_or(u64::MAX))
-}
-
-#[cfg(unix)]
-fn duration(nanos: u64) -> Duration {
-    Duration::from_nanos(nanos)
-}
-
-// The cycles a thread runs a second, measured once.
-#[cfg(windows)]
-fn cycles_a_second() -> u64 {
-    use std::sync::OnceLock;
-
-    static RATE: OnceLock<u64> = OnceLock::new();
-    *RATE.get_or_init(|| rate().max(1))
-}
-
-// Where a thread's cycles are the time-stamp counter's (x86-64): that
-// counter against the clock over five spins of a millisecond, the median.
-// It ticks whether the thread runs or not, so a preemption or an interrupt
-// during a spin does not move it, and a window an endpoint was preempted
-// in is not the median. The thread's own cycles would count neither, and
-// read a rate as much too low as the share of the millisecond it lost —
-// every duration read at it as much too long (measured 2026-11-01: up to
-// 0.8 % under a parallel build, the most of five spins; 0.2 % on an idle
-// machine, the interrupts a thread's cycles leave out).
-#[cfg(all(windows, target_arch = "x86_64"))]
-fn rate() -> u64 {
-    let mut rates = spins(crate::system::time_stamp);
-    rates.sort_unstable();
-    rates[2]
-}
-
-// Elsewhere the thread's own cycles, the most of five spins: a spin
-// preempted counts fewer.
-#[cfg(all(windows, not(target_arch = "x86_64")))]
-fn rate() -> u64 {
-    spins(|| ProcessorTime::thread().count)
-        .into_iter()
-        .max()
-        .unwrap_or(1)
-}
-
-// What `count` counted a second against the clock in each of five spins of
-// a millisecond.
-#[cfg(windows)]
-fn spins(count: fn() -> u64) -> [u64; 5] {
-    use std::time::Instant;
-
-    core::array::from_fn(|_| {
-        let started = Instant::now();
-        let from = count();
-        while started.elapsed() < Duration::from_millis(1) {
-            std::hint::spin_loop();
+cfg_select! {
+    windows => {
+        fn count(scope: Scope) -> Option<u64> {
+            match scope {
+                Scope::Thread => crate::system::thread_cycles(),
+                Scope::Process => crate::system::process_cycles(),
+            }
         }
-        let counted = count().saturating_sub(from);
-        let nanos = started.elapsed().as_nanos().max(1);
-        u64::try_from(u128::from(counted) * 1_000_000_000 / nanos).unwrap_or(u64::MAX)
-    })
+
+        fn duration(cycles: u64) -> Duration {
+            let nanos = u128::from(cycles) * 1_000_000_000 / u128::from(cycles_a_second());
+            Duration::from_nanos(u64::try_from(nanos).unwrap_or(u64::MAX))
+        }
+
+        // The cycles a thread runs a second, measured once.
+        fn cycles_a_second() -> u64 {
+            use std::sync::LazyLock;
+
+            static RATE: LazyLock<u64> = LazyLock::new(|| rate().max(1));
+            *RATE
+        }
+
+        cfg_select! {
+            target_arch = "x86_64" => {
+                // Where a thread's cycles are the time-stamp counter's (x86-64):
+                // that counter against the clock over five spins of a
+                // millisecond, the median. It ticks whether the thread runs or
+                // not, so a preemption or an interrupt during a spin does not
+                // move it, and a window an endpoint was preempted in is not the
+                // median. The thread's own cycles would count neither, and read
+                // a rate as much too low as the share of the millisecond it
+                // lost — every duration read at it as much too long (measured
+                // 2026-11-01: up to 0.8 % under a parallel build, the most of
+                // five spins; 0.2 % on an idle machine, the interrupts a
+                // thread's cycles leave out).
+                fn rate() -> u64 {
+                    let mut rates = spins(crate::system::time_stamp);
+                    rates.sort_unstable();
+                    rates[2]
+                }
+            }
+            _ => {
+                // Elsewhere the thread's own cycles, the most of five spins: a
+                // spin preempted counts fewer.
+                fn rate() -> u64 {
+                    spins(|| ProcessorTime::thread().count)
+                        .into_iter()
+                        .max()
+                        .unwrap_or(1)
+                }
+            }
+        }
+
+        // What `count` counted a second against the clock in each of five
+        // spins of a millisecond.
+        fn spins(count: fn() -> u64) -> [u64; 5] {
+            use std::time::Instant;
+
+            core::array::from_fn(|_| {
+                let started = Instant::now();
+                let from = count();
+                while started.elapsed() < Duration::from_millis(1) {
+                    std::hint::spin_loop();
+                }
+                let counted = count().saturating_sub(from);
+                let nanos = started.elapsed().as_nanos().max(1);
+                u64::try_from(u128::from(counted) * 1_000_000_000 / nanos).unwrap_or(u64::MAX)
+            })
+        }
+    }
+    unix => {
+        fn count(scope: Scope) -> Option<u64> {
+            match scope {
+                Scope::Thread => crate::system::thread_cpu_nanos(),
+                Scope::Process => crate::system::process_cpu_nanos(),
+            }
+        }
+
+        fn duration(nanos: u64) -> Duration {
+            Duration::from_nanos(nanos)
+        }
+    }
+    _ => {
+        compile_error!("processor time is read on Windows and on unix only");
+    }
 }
 
 #[cfg(test)]

@@ -24,17 +24,20 @@
 use std::sync::{Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
-#[cfg(not(windows))]
-mod portable;
 mod revision;
-#[cfg(windows)]
-mod windows;
 
-#[cfg(not(windows))]
-use portable::Waiters;
 pub use revision::Revision;
-#[cfg(windows)]
-use windows::Waiters;
+
+cfg_select! {
+    windows => {
+        mod windows;
+        use windows::Waiters;
+    }
+    _ => {
+        mod portable;
+        use portable::Waiters;
+    }
+}
 
 /// Threads waiting under one lock, woken by a notify or their due time.
 #[derive(Default)]
