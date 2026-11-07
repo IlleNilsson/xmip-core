@@ -201,8 +201,7 @@ impl fmt::Debug for Secret {
 fn pem_holds(text: &str, label: &str) -> bool {
     text.lines().any(|line| {
         line.trim()
-            .strip_prefix("-----BEGIN ")
-            .and_then(|rest| rest.strip_suffix("-----"))
+            .strip_circumfix("-----BEGIN ", "-----")
             .is_some_and(|found| found.ends_with(label))
     })
 }
