@@ -19,8 +19,10 @@ pub enum Given {
     Integer(i64),
     /// A boolean.
     Boolean(bool),
-    /// Anything else TOML can say — an array, a table, a float, a date —
-    /// by the word for it. No setting is one, so it is always refused.
+    /// A table: each value by its key, in the order written.
+    Table(Vec<(String, Given)>),
+    /// Anything else TOML can say — an array, a float, a date — by the word
+    /// for it. No setting is one, so it is always refused.
     Other(&'static str),
 }
 
@@ -30,6 +32,7 @@ impl Given {
             Self::Text(_) => "string",
             Self::Integer(_) => "integer",
             Self::Boolean(_) => "boolean",
+            Self::Table(_) => "table",
             Self::Other(word) => word,
         }
     }
@@ -42,6 +45,7 @@ enum Held {
     Integer(i64),
     Boolean(bool),
     Duration(Duration),
+    Table(Vec<(String, String)>),
 }
 
 /// A Location's settings, read: every value the declaration let through, as
@@ -236,6 +240,15 @@ fn held(kind: Kind, value: &Given) -> Result<Held, String> {
             }
         }
         (Kind::Boolean, Given::Boolean(flag)) => Ok(Held::Boolean(*flag)),
+        (Kind::Table, Given::Table(entries)) => entries
+            .iter()
+            .map(|(key, value)| match value {
+                Given::Text(text) if !text.trim().is_empty() => Ok((key.clone(), text.clone())),
+                Given::Text(_) => Err(alloc::format!("{key:?} is empty")),
+                _ => Err(alloc::format!("{key:?} is not text")),
+            })
+            .collect::<Result<_, _>>()
+            .map(Held::Table),
         _ => Err(wrong()),
     }
 }
@@ -352,6 +365,17 @@ impl Read {
     pub fn duration(&self, name: &str) -> Duration {
         self.optional_duration(name)
             .unwrap_or_else(|| self.absent(name))
+    }
+
+    /// A table setting, each key and its text in the order written, where
+    /// it has a value. A table has no default, so it is optional or
+    /// required.
+    #[must_use]
+    pub fn optional_table(&self, name: &str) -> Option<&[(String, String)]> {
+        match self.value(name) {
+            Some(Held::Table(entries)) => Some(entries),
+            _ => None,
+        }
     }
 }
 
@@ -487,6 +511,56 @@ mod tests {
         assert_eq!(duration("2m"), Ok(Duration::from_secs(120)));
         assert!(duration("5").is_err());
         assert!(duration("five s").is_err());
+    }
+
+    #[test]
+    fn a_table_is_text_by_its_key_and_anything_else_in_it_is_refused_by_key() {
+        let text = |value: &str| Given::Text(value.into());
+        let table = |entries: &[(&str, Given)]| Given::Table(given(entries));
+        let read = held(
+            Kind::Table,
+            &table(&[("o", text("urn:example:order")), ("p", text("urn:p"))]),
+        );
+        assert_eq!(
+            read,
+            Ok(Held::Table(alloc::vec![
+                ("o".into(), "urn:example:order".into()),
+                ("p".into(), "urn:p".into()),
+            ]))
+        );
+        assert_eq!(
+            held(Kind::Table, &table(&[("o", Given::Integer(1))])),
+            Err("\"o\" is not text".into())
+        );
+        assert_eq!(
+            held(Kind::Table, &table(&[("o", text(" "))])),
+            Err("\"o\" is empty".into())
+        );
+        assert!(held(Kind::Table, &text("o")).is_err());
+        assert!(held(Kind::Text, &table(&[])).is_err());
+
+        const PATH: &Settings = &Settings {
+            technology: "x",
+            settings: &[Setting {
+                name: "namespaces",
+                kind: Kind::Table,
+                presence: Presence::Optional,
+                meaning: "Each prefix to its URI.",
+                applies: Applies::Both,
+            }],
+        };
+        let read = PATH
+            .read(
+                Applies::Both,
+                &given(&[("namespaces", table(&[("o", text("urn:o"))]))]),
+            )
+            .expect("reads");
+        assert_eq!(
+            read.optional_table("namespaces"),
+            Some(&[("o".to_string(), "urn:o".to_string())][..])
+        );
+        let empty = PATH.read(Applies::Both, &[]).expect("reads");
+        assert_eq!(empty.optional_table("namespaces"), None);
     }
 
     #[test]

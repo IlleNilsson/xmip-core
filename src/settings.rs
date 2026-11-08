@@ -77,7 +77,7 @@ pub struct Setting {
 }
 
 /// What kind of value a setting holds. Each is written in TOML as the kind
-/// it is: a string, an integer or a boolean.
+/// it is: a string, an integer, a boolean or a table.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(
     feature = "serde",
@@ -110,6 +110,10 @@ pub enum Kind {
         /// The words it may be.
         choices: &'static [&'static str],
     },
+    /// Text by its key, a TOML table whose every value is text and never
+    /// empty: a path's `namespaces`, each prefix to its URI (ADR-0066,
+    /// amendment 2026-11-08).
+    Table,
 }
 
 impl Kind {
@@ -124,6 +128,7 @@ impl Kind {
             Self::Address => "address",
             Self::Secret => "secret",
             Self::Choice { .. } => "choice",
+            Self::Table => "table",
         }
     }
 }
