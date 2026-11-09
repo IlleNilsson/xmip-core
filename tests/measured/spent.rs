@@ -1,10 +1,11 @@
-//! What one Message spends on its own I/O, and Xmip's own share beside it
-//! (`xmip_core::spent`), held to the processor time a thread runs.
+//! What one Message spends on its own I/O, Xmip's own share beside it, held
+//! to the processor time a thread runs, and the disk's time apart from it
+//! (`xmip_core::spent`).
 
 use std::time::Duration;
 
 use xmip_core::processor_time::ProcessorTime;
-use xmip_core::spent::{ReadOnIo, Spent, current, on_io};
+use xmip_core::spent::{ReadOnIo, Spent, current, on_io, on_sync};
 
 /// Run `for_` of this thread's processor time: by its own count and not
 /// the clock's, so a thread preempted still runs all of it.
@@ -62,4 +63,20 @@ fn a_stream_s_reads_and_its_closing_are_its_io() {
     }
     let own = spent.own(Duration::ZERO);
     assert!(own < Duration::from_millis(10), "neither counted: {own:?}");
+}
+
+#[test]
+fn a_sync_is_the_disks_time_and_never_its_own_share() {
+    let spent = Spent::begin();
+    {
+        let _entered = spent.entered();
+        on_sync(|| spin(Duration::from_millis(20)));
+    }
+    let own = spent.own(Duration::ZERO);
+    let disk = spent.disk_sync(Duration::ZERO);
+    assert!(
+        own < Duration::from_millis(10),
+        "not its own share: {own:?}"
+    );
+    assert!(disk >= Duration::from_millis(20), "the disk's: {disk:?}");
 }

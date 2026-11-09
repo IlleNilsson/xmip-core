@@ -24,6 +24,13 @@
 //!
 //! A thread that entered no account pays nothing: [`on_io`] only runs what
 //! it is given.
+//!
+//! **A wait for a storage device to sync is the disk's time, never Xmip's**
+//! (the owner, 2026-11-09; ADR-0018, amendment 2026-11-09): every sync Xmip
+//! makes — a file's, a directory's, the Ledger's — runs in [`on_sync`],
+//! which runs it as an I/O and adds the time it waited, by the clock, to
+//! the account's disk time ([`Spent::disk_sync`]), reported beside its own
+//! share and never held to the millisecond. Nothing else times a sync.
 
 use core::cell::{Cell, RefCell};
 use core::sync::atomic::{AtomicU64, Ordering};
@@ -33,8 +40,9 @@ use std::time::Instant;
 
 use crate::processor_time::ProcessorTime;
 
-/// One Message's account: when it began, and the processor time worked
-/// for it so far, in nanoseconds.
+/// One Message's account: when it began, the processor time worked for it
+/// so far, and the time it waited for a storage device to sync, each in
+/// nanoseconds.
 #[derive(Clone, Debug)]
 pub struct Spent(Arc<Account>);
 
@@ -42,6 +50,7 @@ pub struct Spent(Arc<Account>);
 struct Account {
     begun: Instant,
     worked: AtomicU64,
+    synced: AtomicU64,
 }
 
 std::thread_local! {
@@ -59,6 +68,7 @@ impl Spent {
         Self(Arc::new(Account {
             begun: Instant::now(),
             worked: AtomicU64::new(0),
+            synced: AtomicU64::new(0),
         }))
     }
 
@@ -71,8 +81,7 @@ impl Spent {
     /// `worked`, processor time worked for it on a thread that worked for
     /// many at once, its share of it.
     pub fn add(&self, worked: Duration) {
-        let nanos = u64::try_from(worked.as_nanos()).unwrap_or(u64::MAX);
-        self.0.worked.fetch_add(nanos, Ordering::Relaxed);
+        self.0.worked.fetch_add(nanos(worked), Ordering::Relaxed);
     }
 
     /// This thread working for it until the guard is dropped: what it runs
@@ -90,6 +99,19 @@ impl Spent {
     pub fn own(&self, beside: Duration) -> Duration {
         Duration::from_nanos(self.0.worked.load(Ordering::Relaxed)) + beside
     }
+
+    /// The disk's time of it: the time its threads waited for a storage
+    /// device to sync so far ([`on_sync`]), and `beside`, its share of a
+    /// sync made elsewhere for many at once.
+    #[must_use]
+    pub fn disk_sync(&self, beside: Duration) -> Duration {
+        Duration::from_nanos(self.0.synced.load(Ordering::Relaxed)) + beside
+    }
+}
+
+/// A duration in nanoseconds, the most a `u64` holds at most.
+fn nanos(duration: Duration) -> u64 {
+    u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX)
 }
 
 /// A thread working for a Message's account ([`Spent::entered`]); what it
@@ -142,6 +164,25 @@ pub fn on_io<T>(io: impl FnOnce() -> T) -> T {
     MARK.set(None);
     let done = io();
     MARK.set(ProcessorTime::try_thread());
+    done
+}
+
+/// `sync` run, a wait for a storage device to sync — `fsync`,
+/// `FlushFileBuffers`, a directory's sync, the Ledger's — as an I/O
+/// ([`on_io`]), and the time it waited, by the clock, added to the disk's
+/// time of the account this thread works for ([`Spent::disk_sync`]). Every
+/// sync Xmip makes runs here; where the thread works for no account, it is
+/// only run.
+pub fn on_sync<T>(sync: impl FnOnce() -> T) -> T {
+    let Some(spent) = current() else {
+        return on_io(sync);
+    };
+    let began = Instant::now();
+    let done = on_io(sync);
+    spent
+        .0
+        .synced
+        .fetch_add(nanos(began.elapsed()), Ordering::Relaxed);
     done
 }
 
@@ -198,5 +239,19 @@ mod tests {
         let spent = Spent::begin();
         spent.add(worked / 2);
         assert_eq!(spent.own(worked / 2), worked / 2 * 2);
+    }
+
+    #[test]
+    fn a_sync_waited_is_the_disks_time_of_the_account_worked_for() {
+        let spent = Spent::begin();
+        // Outside any account: run, and counted nowhere.
+        assert_eq!(on_sync(|| 7), 7);
+        {
+            let _entered = spent.entered();
+            on_sync(|| std::thread::sleep(Duration::from_millis(2)));
+        }
+        let disk = spent.disk_sync(Duration::ZERO);
+        assert!(disk >= Duration::from_millis(2), "{disk:?}");
+        assert_eq!(spent.disk_sync(disk), disk * 2, "and its share beside");
     }
 }

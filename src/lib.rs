@@ -62,8 +62,8 @@ pub mod mechanism;
 /// What a technology can be configured with, declared once by the technology
 /// (ADR-0064, amendment 2026-09-26).
 pub mod settings;
-/// What one Message spends on its own I/O, and Xmip's own share of its
-/// time beside it.
+/// What one Message spends on its own I/O, Xmip's own share of its time
+/// beside it, and the disk's time: its waits for a storage device to sync.
 #[cfg(feature = "std")]
 pub mod spent;
 /// A thread waiting under a lock until woken or due, its due time kept to
