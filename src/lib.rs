@@ -4,7 +4,7 @@
 
 //! The identity vocabulary lives here rather than in `xmip-core-party` because
 //! the three gates need it and none of them may depend on the Party.
-//! `architecture.xmip` gives `xmip-core-identify`, `xmip-core-authenticate` and
+//! `architecture.toml` gives `xmip-core-identify`, `xmip-core-authenticate` and
 //! `xmip-core-authorize` no dependency on `xmip-core-party`, and it is right:
 //! authenticating a credential is not the same as knowing whose it is.
 //!

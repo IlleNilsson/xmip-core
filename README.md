@@ -40,4 +40,4 @@ authenticating a credential is not the same as knowing whose it is.
 
 ADR-0019 makes the Party the identity holder in both directions, ADR-0022
 classifies every identity by how it is proven, and ADR-0009 keeps roles out of
-it; `architecture.xmip` carries the maturity.
+it; `architecture.toml` carries the maturity.
