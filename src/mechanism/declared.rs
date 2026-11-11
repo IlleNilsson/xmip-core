@@ -276,8 +276,9 @@ pub fn message() -> Mechanism {
     Mechanism::declare("message", SharedSecret, Message, Identifies)
 }
 
-/// The Party the Contract the first section is bound to names as its sender.
-/// **Identifies. Does not authenticate.**
+/// The Contract the first section is bound to, as the content claims it; it
+/// names no Party (ADR-0019, amendment 2026-11-11). **Identifies. Does not
+/// authenticate.**
 #[must_use]
 pub fn contract() -> Mechanism {
     Mechanism::declare("contract", SharedSecret, Message, Identifies)
