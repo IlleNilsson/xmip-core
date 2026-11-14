@@ -29,7 +29,15 @@ both use; each caller decides what a `Null` is. And what a secret a
 Location presents is — `SecretName`, `SecretKind` (`password`, `key`,
 `certificate`), `Secret`, its value overwritten when dropped and never
 printed, checked against its kind once here — and `Secrets`, the trait a
-node is handed to read one (`secret.rs`; ADR-0019, amendment 2026-10-29). It goes first,
+node is handed to read one (`secret.rs`; ADR-0019, amendment 2026-10-29).
+And the audit chain's rule, once, for every log (`audit_chain.rs`, behind
+`std`; ADR-0070 clause 5, amendment 2026-11-13): a writer's first record is
+number 1 after `FIRST`, the zero digest, each next one takes its number and
+the digest before it from its writer's `Head`, and `digest` is the SHA-256
+of a record's canonical form — the estate's one, `xmip-core-library-codec`'s
+`digest`, the one crate of the estate this crate takes, under `std` alone.
+The file sink and Xmip Storage chain by it; the walk is the audit
+capability's. It goes first,
 because every other repository depends on it (`repository-model.md` section
 10).
 

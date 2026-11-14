@@ -49,6 +49,10 @@ mod scalar;
 mod secret;
 mod severity;
 
+/// The audit chain's rule, once: where a writer's chain starts, how each
+/// next record is chained, and the digest (ADR-0070 clause 5).
+#[cfg(feature = "std")]
+pub mod audit_chain;
 /// The fastest of five: the figure the millisecond rule holds a measured
 /// time to, for a node's own report and every test.
 pub mod fastest;

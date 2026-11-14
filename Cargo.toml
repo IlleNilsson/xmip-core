@@ -20,7 +20,7 @@ uuid-v7 = ["std", "dep:uuid"]
 # time a thread has used (processor_time.rs), which a node's own share of a
 # Message is counted in (spent.rs). Off on a microcontroller, which supplies
 # its own Clock as it supplies its own IdGenerator.
-std = ["dep:windows-sys", "dep:libc"]
+std = ["dep:windows-sys", "dep:libc", "dep:codec"]
 
 # What the estate's tests measure with beside it: the process's processor
 # time and the one latency spread (latency.rs). Never in a node.
@@ -49,6 +49,12 @@ uuid = { version = "1", features = ["v7"], optional = true }
 # for the allocator. no_std with alloc, as this crate is; the version
 # xmip-core-secret already builds.
 zeroize = { version = "1", default-features = false, features = ["alloc"] }
+
+# The audit chain's digest, the estate's one SHA-256, and its hex
+# (audit_chain.rs): a Library, which a Foundation crate may take (ADR-0058,
+# clause 3 and its amendment). std-only, as codec is, so a microcontroller's
+# build carries none of it.
+codec = { package = "xmip-core-library-codec", git = "https://github.com/IlleNilsson/xmip-core-library-codec", branch = "main", optional = true }
 
 # The operating system's calls (system.rs): on Windows the timed wait's
 # kernel event and high-resolution waitable timer (the owner, 2026-10-16)
