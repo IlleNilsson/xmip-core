@@ -89,7 +89,7 @@ unsafe_code = "deny"
 name = "measured"
 path = "tests/measured/main.rs"
 test = false
-required-features = ["std"]
+required-features = ["test-support"]
 
 [dev-dependencies]
 # Only to prove an identifier serialises as text rather than as a number.
