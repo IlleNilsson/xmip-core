@@ -36,7 +36,9 @@ extern crate alloc;
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
-mod clock;
+/// What time it is: the `Clock`, the span between two of its readings, and
+/// the one test clock, `Stepped`, under `test-support`.
+pub mod clock;
 mod direction;
 mod error;
 mod established;
