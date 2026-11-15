@@ -173,6 +173,21 @@ impl Rounds {
         self.idle.push(idle);
     }
 
+    /// One round, a call that waits on what it asks: its wall clock and
+    /// this process's processor time across it, then a plain wake beside
+    /// it; what the call answered. A round whose start and end two threads
+    /// stamp pushes [`Rounds::took`] and [`Rounds::worked`] itself and
+    /// calls [`Rounds::beside`].
+    pub fn round<T>(&mut self, call: impl FnOnce() -> T) -> T {
+        let from = ProcessorTime::process();
+        let began = Instant::now();
+        let answer = call();
+        self.took.push(began.elapsed());
+        self.worked.push(from.elapsed());
+        self.beside();
+        answer
+    }
+
     /// Held, printed under `what`: its wall clock's spread.
     ///
     /// # Panics
@@ -183,11 +198,7 @@ impl Rounds {
         let took = spread(what, self.took);
         let usual = spread("a plain wake beside it", self.woke).fastest_of_five;
         let worked = spread("the process's processor time for a round", self.worked);
-        assert!(
-            took.fastest_of_five < MILLISECOND + usual * self.wakes,
-            "{what}: the fastest of five {:?}, the machine's own {usual:?}",
-            took.fastest_of_five
-        );
+        woke_beside_a_plain_wake(what, took.fastest_of_five, usual, self.wakes);
         worked_beside_a_plain_wake(
             &std::format!("{what}: the process's processor time"),
             worked.fastest_of_five,
@@ -195,6 +206,22 @@ impl Rounds {
         );
         took
     }
+}
+
+/// A wake held to the millisecond rule beside the machine's: `took`, the
+/// fastest of five of a round's wall clock, under the millisecond plus
+/// `usual`, the fastest of five of a plain wake measured in the same rounds,
+/// once for each of the `wakes` threads the round wakes. The half of
+/// [`Rounds::hold`] that a round whose processor time this process cannot
+/// count apart is held by.
+///
+/// # Panics
+/// Where `took` is a millisecond or more beyond the plain wakes'.
+pub fn woke_beside_a_plain_wake(what: &str, took: Duration, usual: Duration, wakes: u32) {
+    assert!(
+        took < MILLISECOND + usual * wakes,
+        "{what}: the fastest of five {took:?}, the machine's own {usual:?}, {wakes} woken"
+    );
 }
 
 /// Xmip's own work held to the millisecond rule beside the machine's:
@@ -313,6 +340,26 @@ mod tests {
         assert!(slept.is_err(), "a wake seconds beyond a plain wake fails");
         let busy = std::panic::catch_unwind(|| rounds(quick, late).hold("a wait that worked"));
         assert!(busy.is_err(), "a round's work beyond a plain wake's fails");
+    }
+
+    #[test]
+    fn a_round_is_its_call_measured_with_a_plain_wake_beside_it() {
+        let mut rounds = Rounds::crossing(1);
+        let answers: Vec<usize> = (0..10).map(|round| rounds.round(|| round * 2)).collect();
+        assert_eq!(answers, (0..10).map(|round| round * 2).collect::<Vec<_>>());
+        assert_eq!((rounds.took.len(), rounds.worked.len()), (10, 10));
+        assert_eq!((rounds.woke.len(), rounds.idle.len()), (10, 10));
+        assert_eq!(rounds.hold("a call answered at once").rounds, 10);
+    }
+
+    #[test]
+    fn a_wake_is_held_beside_a_plain_wake_for_each_thread_it_wakes() {
+        let usual = Duration::from_micros(50);
+        woke_beside_a_plain_wake("two woken", Duration::from_micros(1090), usual, 2);
+        let beyond = std::panic::catch_unwind(|| {
+            woke_beside_a_plain_wake("one woken", Duration::from_micros(1090), usual, 1);
+        });
+        assert!(beyond.is_err(), "beyond the plain wakes' fails");
     }
 
     #[test]
