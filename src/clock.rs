@@ -41,6 +41,17 @@ pub fn between(earlier: i128, later: i128) -> Duration {
     Duration::new(seconds, rest)
 }
 
+/// `clock`'s monotonic reading as a function of its own, holding the clock
+/// as long as it lives: what a part that reads no clock itself — a Library,
+/// as `net`'s watched connection and HTTP/2 are — is handed by a caller
+/// that was handed `clock` (ADR-0068, amendments 2026-11-14 and
+/// 2026-11-15).
+#[cfg(feature = "std")]
+pub fn reading(clock: &std::sync::Arc<dyn Clock>) -> impl Fn() -> i128 + Send + Sync + 'static {
+    let clock = std::sync::Arc::clone(clock);
+    move || clock.monotonic_nanos()
+}
+
 /// Where the time comes from. [`SystemClock`] in a running node; a test
 /// hands in [`Stepped`].
 pub trait Clock: Send + Sync {
@@ -214,6 +225,18 @@ mod tests {
         assert_eq!(clock.monotonic_nanos(), 10, "the monotonic reading stays");
         clock.pass(Duration::from_secs(1));
         assert_eq!(clock.monotonic_nanos(), NANOS_A_SECOND + 10);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn a_reading_handed_on_reads_the_clock_it_was_made_of_as_it_is_stepped() {
+        let stepped = std::sync::Arc::new(Stepped::default());
+        let clock: std::sync::Arc<dyn Clock> = stepped.clone();
+        let now = reading(&clock);
+        drop(clock);
+        assert_eq!(now(), 0);
+        stepped.pass(Duration::from_millis(3));
+        assert_eq!(now(), 3_000_000, "the clock held, as stepped");
     }
 
     #[test]

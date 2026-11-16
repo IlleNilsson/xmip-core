@@ -11,7 +11,9 @@ trait and its one production reading, `SystemClock` (`clock.rs`, behind the
 default `std` feature; a wire that counts seconds converts at the wire with
 `Clock::unix_seconds`), a decision's span counted on the monotonic reading
 of the Clock it was handed, added with `clock::nanos` and read back with
-`clock::between`, and the estate's one test clock, `clock::Stepped`, whose
+`clock::between`, handed on as `clock::reading` to a part that reads no
+clock itself (a Library: `net`'s watched connection and HTTP/2), and the
+estate's one test clock, `clock::Stepped`, whose
 wall and monotonic readings a test steps, under `test-support` (ADR-0068,
 amendment 2026-11-15); the one timed wait of the message path, `wake::Wake`,
 a `Condvar`'s shape whose due time is kept to the microsecond — on Windows a
