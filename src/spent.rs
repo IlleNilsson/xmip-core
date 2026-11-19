@@ -87,9 +87,9 @@ impl Spent {
     /// This thread working for it until the guard is dropped: what it runs
     /// meanwhile, outside its I/O, is the account's.
     pub fn entered(&self) -> Entered {
-        credit();
+        let now = credit();
         let before = ENTERED.with(|entered| entered.borrow_mut().replace(self.clone()));
-        MARK.set(ProcessorTime::try_thread());
+        MARK.set(now.or_else(ProcessorTime::try_thread));
         Entered { before }
     }
 
@@ -123,29 +123,32 @@ pub struct Entered {
 
 impl Drop for Entered {
     fn drop(&mut self) {
-        credit();
+        let now = credit();
         let before = self.before.take();
         let working = before.is_some();
         ENTERED.with(|entered| *entered.borrow_mut() = before);
-        MARK.set(working.then(ProcessorTime::try_thread).flatten());
+        MARK.set(
+            working
+                .then(|| now.or_else(ProcessorTime::try_thread))
+                .flatten(),
+        );
     }
 }
 
 /// What this thread ran since its mark, credited to the account it works
-/// for, and its mark moved to now.
-fn credit() {
-    let Some(mark) = MARK.get() else {
-        return;
-    };
-    let Some(now) = ProcessorTime::try_thread() else {
-        return;
-    };
+/// for, and its mark moved to now: the reading, which a change of account
+/// marks from too, so the operating system is asked once at each
+/// (2026-11-17); `None` where the thread was not counting.
+fn credit() -> Option<ProcessorTime> {
+    let mark = MARK.get()?;
+    let now = ProcessorTime::try_thread()?;
     ENTERED.with(|entered| {
         if let Some(spent) = entered.borrow().as_ref() {
             spent.add(now.since(mark));
         }
     });
     MARK.set(Some(now));
+    Some(now)
 }
 
 /// The account this thread works for now, if any.
