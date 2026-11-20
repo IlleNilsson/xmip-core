@@ -1,6 +1,3 @@
-# Its own workspace root, so this repository builds on its own.
-[workspace]
-
 [package]
 name = "xmip-core"
 version = "0.1.0"
@@ -94,6 +91,3 @@ required-features = ["test-support"]
 [dev-dependencies]
 # Only to prove an identifier serialises as text rather than as a number.
 serde_json = "1"
-
-[profile.dev.package."*"]
-opt-level = 3
