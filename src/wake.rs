@@ -163,12 +163,18 @@ mod tests {
     use std::thread;
     use std::vec::Vec;
 
-    /// One notify wakes one waiter; notifying all wakes the rest.
+    /// One notify wakes a waiter; notifying all wakes the rest. A wake may
+    /// come with nothing notified, as a `Condvar`'s may ([`Wake::wait`]):
+    /// std's on Linux also wakes a waiter that had let go of the lock and
+    /// not yet slept when the notify came. So each waiter waits for a
+    /// token, as a caller waits for its condition: the one a notify woke
+    /// takes the one token handed out, and any woken beside it finds none
+    /// and waits again.
     #[test]
-    fn notify_one_wakes_one_and_notify_all_the_rest() {
-        // How many wait, and whether they were let go; the waiters' wake,
-        // and the one that tells this thread how many wait.
-        let shared = Arc::new((Mutex::new((0_u32, false)), Wake::new(), Wake::new()));
+    fn notify_one_wakes_a_waiter_and_notify_all_the_rest() {
+        // How many wait, the tokens handed out, and how many were taken;
+        // the waiters' wake, and the one that tells this thread.
+        let shared = Arc::new((Mutex::new((0_u32, 0_u32, 0_u32)), Wake::new(), Wake::new()));
         let waiters: Vec<_> = (0..4)
             .map(|_| {
                 let shared = Arc::clone(&shared);
@@ -177,32 +183,28 @@ mod tests {
                     let mut guard = mutex.locked();
                     guard.0 += 1;
                     told.notify_all();
-                    // Woken without being let go: only by a notify.
-                    let mut guard = wake.wait(mutex, guard);
-                    guard.0 -= 1;
+                    let mut guard = wake.wait_while(mutex, guard, |state| state.1 == 0);
+                    guard.1 -= 1;
+                    guard.2 += 1;
                     told.notify_all();
-                    let mut guard = wake.wait_while(mutex, guard, |state| !state.1);
-                    guard.1 = true;
                 })
             })
             .collect();
         let (mutex, wake, told) = &*shared;
         let within = Duration::from_secs(5);
-        let (state, _) = told.wait_timeout_while(mutex, mutex.locked(), within, |s| s.0 < 4);
+        let (mut state, _) = told.wait_timeout_while(mutex, mutex.locked(), within, |s| s.0 < 4);
+        state.1 = 1;
         drop(state);
         wake.notify_one();
-        let (state, _) = told.wait_timeout_while(mutex, mutex.locked(), within, |s| s.0 > 3);
-        assert_eq!(state.0, 3, "one woken");
-        let (mut state, came) =
-            told.wait_timeout_while(mutex, state, Duration::from_millis(50), |s| s.0 == 3);
-        assert!(came, "no other woken");
-        state.1 = true;
+        let (mut state, _) = told.wait_timeout_while(mutex, mutex.locked(), within, |s| s.2 < 1);
+        assert_eq!((state.1, state.2), (0, 1), "one woken, by one notify");
+        state.1 = 3;
         drop(state);
         wake.notify_all();
         for waiter in waiters {
             waiter.join().expect("woken");
         }
-        assert_eq!(mutex.locked().0, 0, "all woken");
+        assert_eq!(mutex.locked().2, 4, "all woken");
     }
 
     /// A notify that races a due time is the waiter's, never lost and never
