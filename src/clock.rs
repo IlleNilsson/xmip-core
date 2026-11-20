@@ -41,6 +41,20 @@ pub fn between(earlier: i128, later: i128) -> Duration {
     Duration::new(seconds, rest)
 }
 
+/// The number after `last` at the reading `now`, in whatever unit the
+/// caller counts: `now` where it is above `last`, else one above `last`.
+/// Strictly increasing from one number to the next whatever the clock does,
+/// and never below a clock that runs on, so a number taken after a store
+/// was lost or restored is still above every one taken before it, while
+/// the clock is right. A slice's serial, a revocation list's number and a
+/// node's start are each taken so (ADR-0031, amendment 2026-11-07; ADR-0056,
+/// amendment 2026-11-20).
+#[must_use]
+pub fn serial(last: u64, now: i128) -> u64 {
+    let now = u64::try_from(now).unwrap_or(if now < 0 { 0 } else { u64::MAX });
+    now.max(last.saturating_add(1))
+}
+
 /// `clock`'s monotonic reading as a function of its own, holding the clock
 /// as long as it lives: what a part that reads no clock itself — a Library,
 /// as `net`'s watched connection and HTTP/2 are — is handed by a caller
@@ -195,6 +209,16 @@ mod tests {
         fn unix_timestamp_nanos(&self) -> i128 {
             42
         }
+    }
+
+    #[test]
+    fn a_serial_is_the_clock_above_the_last_and_one_above_it_otherwise() {
+        assert_eq!(serial(5, 9), 9, "the clock, above the last");
+        assert_eq!(serial(9, 9), 10, "one above, the clock not moved");
+        assert_eq!(serial(9, 3), 10, "one above, the clock set back");
+        assert_eq!(serial(0, -7), 1, "a reading before the epoch counts none");
+        assert_eq!(serial(u64::MAX, 0), u64::MAX, "held at the last there is");
+        assert_eq!(serial(0, i128::MAX), u64::MAX);
     }
 
     #[test]
