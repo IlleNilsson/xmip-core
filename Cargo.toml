@@ -51,7 +51,7 @@ zeroize = { version = "1", default-features = false, features = ["alloc"] }
 # (audit_chain.rs): a Library, which a Foundation crate may take (ADR-0058,
 # clause 3 and its amendment). std-only, as codec is, so a microcontroller's
 # build carries none of it.
-codec = { package = "xmip-core-library-codec", git = "https://github.com/IlleNilsson/xmip-core-library-codec", branch = "main", optional = true }
+codec = { workspace = true, optional = true }
 
 # The operating system's calls (system.rs): on Windows the timed wait's
 # kernel event and high-resolution waitable timer (the owner, 2026-10-16)
